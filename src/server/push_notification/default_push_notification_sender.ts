@@ -33,12 +33,12 @@ export class DefaultPushNotificationSender implements PushNotificationSender {
             return;
         }
 
-        const notificationPromises = pushConfigs.map(pushConfig => 
-            this._dispatchNotification(task, pushConfig).catch(error => {
-                console.error(`Error sending push notification for task_id=${task.id} to URL: ${pushConfig.url}. Error:`, error);
-            })
-        );
-        await Promise.all(notificationPromises);
+        pushConfigs.forEach(pushConfig => {
+            this._dispatchNotification(task, pushConfig)
+                .catch(error => {
+                    console.error(`Error sending push notification for task_id=${task.id} to URL: ${pushConfig.url}. Error:`, error);
+                });
+        });
     }
 
     private async _dispatchNotification(
