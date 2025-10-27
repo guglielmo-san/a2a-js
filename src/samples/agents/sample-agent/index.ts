@@ -165,6 +165,7 @@ const sampleAgentCard: AgentCard = {
       outputModes: ['text', 'task-status'] // Explicitly defining for skill
     },
   ],
+  preferredTransport: 'JSONRPC',
   supportsAuthenticatedExtendedCard: false,
 };
 
