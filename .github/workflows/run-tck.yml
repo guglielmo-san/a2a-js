@@ -1,17 +1,8 @@
 name: Run TCK
 
 on:
-# Do not enable until a compliant version is reached
-#  push:
-#    branches:
-#      - main
-#      - 0.3.x
-#  pull_request:
-#    branches:
-#      - main
-#      - 0.3.x
   workflow_dispatch:
-  push:
+
 
 env:
   # TODO once we have the TCK for 0.4.0 we will need to look at the branch to decide which TCK version to run.
