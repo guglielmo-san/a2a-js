@@ -11,6 +11,7 @@ on:
 #      - main
 #      - 0.3.x
   workflow_dispatch:
+  push:
 
 env:
   # TODO once we have the TCK for 0.4.0 we will need to look at the branch to decide which TCK version to run.
