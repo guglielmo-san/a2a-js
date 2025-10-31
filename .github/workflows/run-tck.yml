@@ -50,7 +50,7 @@ jobs:
           uv pip install -e .
         working-directory: tck/a2a-tck
       - name: Start SUT
-        run: npm run agents:sample-agent
+        run: npm run agents:sample-agent &
       - name: Wait for SUT to start
         run: |
           URL="${{ env.SUT_JSONRPC_URL }}/.well-known/agent-card.json"
