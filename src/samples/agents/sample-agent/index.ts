@@ -21,11 +21,26 @@ import { A2AExpressApp } from "../../../server/express/index.js";
  * SampleAgentExecutor implements the agent's core logic.
  */
 class SampleAgentExecutor implements AgentExecutor {
+  private runningTask: Set<string> = new Set();
+  private lastContextId?: string;
 
   public cancelTask = async (
     taskId: string,
     eventBus: ExecutionEventBus,
-  ): Promise<void> => { };
+  ): Promise<void> => { 
+    this.runningTask.delete(taskId);
+    const cancelledUpdate: TaskStatusUpdateEvent = {
+        kind: 'status-update',
+        taskId: taskId,
+        contextId: this.lastContextId,
+        status: {
+          state: 'canceled',
+          timestamp: new Date().toISOString(),
+        },
+        final: true, // Cancellation is a final state
+      };
+    eventBus.publish(cancelledUpdate);
+  };
 
   async execute(
     requestContext: RequestContext,
@@ -37,6 +52,9 @@ class SampleAgentExecutor implements AgentExecutor {
     // Determine IDs for the task and context
     const taskId = requestContext.taskId;
     const contextId = requestContext.contextId;
+
+    this.lastContextId = contextId;
+    this.runningTask.add(taskId);
 
     console.log(
       `[SampleAgentExecutor] Processing message ${userMessage.messageId} for task ${taskId} (context: ${contextId})`
@@ -56,6 +74,14 @@ class SampleAgentExecutor implements AgentExecutor {
         metadata: userMessage.metadata, // Carry over metadata from message if any
       };
       eventBus.publish(initialTask);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    if (!this.runningTask.has(taskId)) {
+      console.log(
+        `[SampleAgentExecutor] Task ${taskId} was cancelled before processing could complete.`
+      );
+      return;
     }
 
     // 2. Publish "working" status update
@@ -79,10 +105,26 @@ class SampleAgentExecutor implements AgentExecutor {
     };
     eventBus.publish(workingStatusUpdate);
 
+    await new Promise(resolve => setTimeout(resolve, 500));
+    if (!this.runningTask.has(taskId)) {
+      console.log(
+        `[SampleAgentExecutor] Task ${taskId} was cancelled before processing could complete.`
+      );
+      return;
+    }
+    
+    
     // 3. Publish final task status update
     const agentReplyText = this.parseInputMessage(userMessage);
-    console.info(`[SampleAgentExecutor] Prompt response: ${agentReplyText}`);
- 
+    console.info(`[SampleAgentExecutor] Prompt response: ${agentReplyText}`)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    if (!this.runningTask.has(taskId)) {
+      console.log(
+        `[SampleAgentExecutor] Task ${taskId} was cancelled before processing could complete.`
+      );
+      return;
+    }
+
     const agentMessage: Message = {
       kind: 'message',
       role: 'agent',
@@ -97,13 +139,12 @@ class SampleAgentExecutor implements AgentExecutor {
       taskId: taskId,
       contextId: contextId,
       status: {
-        state: 'completed',
+        state: 'input-required',
         message: agentMessage,
         timestamp: new Date().toISOString(),
       },
       final: true,
     };
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate processing delay
     eventBus.publish(finalUpdate);
 
     console.log(
@@ -149,7 +190,7 @@ const sampleAgentCard: AgentCard = {
   protocolVersion: '0.3.0',
   capabilities: {
     streaming: true, // The new framework supports streaming
-    pushNotifications: false, // Assuming not implemented for this agent yet
+    pushNotifications: true, // Assuming not implemented for this agent yet
     stateTransitionHistory: true, // Agent uses history
   },
   defaultInputModes: ['text'],
@@ -165,7 +206,9 @@ const sampleAgentCard: AgentCard = {
       outputModes: ['text', 'task-status'] // Explicitly defining for skill
     },
   ],
-  supportsAuthenticatedExtendedCard: false,
+  preferredTransport: 'JSONRPC',
+  additionalInterfaces: [{url: 'http://localhost:41241', transport: 'JSONRPC'}],
+  supportsAuthenticatedExtendedCard: true,
 };
 
 async function main() {
@@ -188,9 +231,11 @@ async function main() {
 
   // 5. Start the server
   const PORT = process.env.PORT || 41241;
-  expressApp.listen(PORT, (err) => {
-    if (err) {
-      throw err;
+  
+  expressApp.listen(PORT, (e) => {
+    if (e) {
+      console.error(e);
+      throw e;
     }
     console.log(`[SampleAgent] Server using new framework started on http://localhost:${PORT}`);
     console.log(`[SampleAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`);
