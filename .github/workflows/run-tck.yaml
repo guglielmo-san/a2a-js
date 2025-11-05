@@ -1,0 +1,120 @@
+name: Run TCK
+
+on:
+  workflow_dispatch:
+
+
+env:
+  # TODO once we have the TCK for 0.4.0 we will need to look at the branch to decide which TCK version to run.
+  # Tag of the TCK
+  TCK_VERSION: main
+  # Tells uv to not need a venv, and instead use system
+  UV_SYSTEM_PYTHON: 1
+  # SUT_JSONRPC_URL to use for the TCK and the server agent
+  SUT_JSONRPC_URL: http://localhost:41241
+  # Slow system on CI
+  TCK_STREAMING_TIMEOUT: 5.0
+
+# Only run the latest job
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  tck-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout a2a-js
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+      - run: |
+          npm ci
+          npm run build
+      - name: Checkout a2a-tck
+        uses: actions/checkout@v4
+        with:
+          repository: a2aproject/a2a-tck
+          path: tck/a2a-tck
+          ref: ${{ env.TCK_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "tck/a2a-tck/pyproject.toml"
+      - name: Install uv and Python dependencies
+        run: |
+          pip install uv
+          uv pip install -e .
+        working-directory: tck/a2a-tck
+      - name: Start SUT
+        run: |
+          cd tck
+          npm run tck:sample-agent &
+      - name: Wait for SUT to start
+        run: |
+          URL="${{ env.SUT_JSONRPC_URL }}/.well-known/agent-card.json"
+          EXPECTED_STATUS=200
+          TIMEOUT=120
+          RETRY_INTERVAL=2
+          START_TIME=$(date +%s)
+
+          while true; do
+            # Calculate elapsed time
+            CURRENT_TIME=$(date +%s)
+            ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+
+            # Check for timeout
+            if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
+                echo "❌ Timeout: Server did not respond with status $EXPECTED_STATUS within $TIMEOUT seconds."
+                exit 1
+            fi
+
+            # Get HTTP status code. || true is to reporting a failure to connect as an error
+            HTTP_STATUS=$(curl --output /dev/null --silent --write-out "%{http_code}" "$URL") || true
+            echo "STATUS: ${HTTP_STATUS}"
+
+            # Check if we got the correct status code
+            if [ "$HTTP_STATUS" -eq "$EXPECTED_STATUS" ]; then
+                echo "✅ Server is up! Received status $HTTP_STATUS after $ELAPSED_TIME seconds."
+                break;
+            fi
+
+            # Wait before retrying
+            echo "⏳ Server not ready (status: $HTTP_STATUS). Retrying in $RETRY_INTERVAL seconds..."
+            sleep "$RETRY_INTERVAL"
+          done
+          
+      - name: Run TCK
+        id: run-tck
+        timeout-minutes: 5
+        run: |
+          set -o pipefail
+          ./run_tck.py --sut-url ${{ env.SUT_JSONRPC_URL }} --category mandatory --compliance-report report.json 2>&1 | tee tck-output.log
+        working-directory: tck/a2a-tck
+      - name: Capture Diagnostics on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tck-diagnostics-node
+          path: |
+            tck/a2a-tck/tck-output.log
+            npm-debug.log
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Stop SUT
+        if: always()
+        run: |
+          # Find and kill the SUT process
+          pkill -f "npm run agents:sample-agent" || true
+          sleep 2
+      - name: Upload TCK Compliance Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tck-compliance-report-node
+          path: tck/a2a-tck/report.json
+          retention-days: 14
+          if-no-files-found: ignore
