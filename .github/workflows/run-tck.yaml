@@ -4,9 +4,11 @@ on:
   workflow_dispatch:
 
 
+
 env:
   # TODO once we have the TCK for 0.4.0 we will need to look at the branch to decide which TCK version to run.
   # Tag of the TCK
+  TCK_VERSION: main
   TCK_VERSION: main
   # Tells uv to not need a venv, and instead use system
   UV_SYSTEM_PYTHON: 1
@@ -29,6 +31,11 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+      - run: |
+          npm ci
+          npm run build
           node-version: 18
           registry-url: 'https://registry.npmjs.org'
       - run: |
