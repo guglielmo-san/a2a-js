@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import {Task} from "../types.js";
+import {ListTasksParams, ListTasksResult, Task} from "../types.js";
 import { A2AError } from "./error.js";
 import {
   getCurrentTimestamp,
@@ -27,6 +27,8 @@ export interface TaskStore {
    * @returns A promise resolving to an object containing the Task, or undefined if not found.
    */
   load(taskId: string): Promise<Task | undefined>;
+
+  list(params: ListTasksParams): Promise<Task[]>;
 }
 
 // ========================
@@ -46,5 +48,10 @@ export class InMemoryTaskStore implements TaskStore {
   async save(task: Task): Promise<void> {
     // Store copies to prevent internal mutation if caller reuses objects
     this.store.set(task.id, {...task});
+  }
+
+  async list(params: ListTasksParams): Promise<Task[]> {
+    // Returns the list of saved tasks
+    return {...Array.from(this.store.values())};
   }
 }

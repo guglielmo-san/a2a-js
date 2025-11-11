@@ -125,6 +125,9 @@ export class JsonRpcTransportHandler {
                             rpcRequest.params
                         );
                         break;
+                    case 'tasks/list':
+                        result = await this.requestHandler.listTasks(rpcRequest.params);
+                        break;
                     default:
                         throw A2AError.methodNotFound(method);
                 }
