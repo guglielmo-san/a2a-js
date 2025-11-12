@@ -344,11 +344,11 @@ export class DefaultRequestHandler implements A2ARequestHandler {
 
         const filteredTasks = await this.taskStore.list(params);
         filteredTasks.forEach(task => {
-            let historyLength = params.historyLength || 0;
-            task.history = task.history?.slice(0, historyLength);
+            const historyLength = params.historyLength ?? 0;
+            task.history = historyLength > 0 ? task.history?.slice(-historyLength) : [];
 
             if (!params.includeArtifacts && task.artifacts){
-            task.artifacts = []
+                task.artifacts = []
             }
         })
         
