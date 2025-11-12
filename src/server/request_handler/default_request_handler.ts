@@ -342,8 +342,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
         params: ListTasksParams
     ): Promise<ListTasksResult> {
 
-        
-        
+        const filteredTasks = await this.taskStore.list(params);
         filteredTasks.forEach(task => {
             let historyLength = params.historyLength || 0;
             task.history = task.history?.slice(0, historyLength);
