@@ -496,7 +496,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
             if (!params.pageToken) return true;
             if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'pageToken'
             // pageToken is a timestamp, so we want tasks older than the pageToken
-            return new Date(task.status.timestamp) < new Date(params.pageToken);
+            return new Date(task.status.timestamp) < new Date(Buffer.from(params.pageToken, 'base64').toString('utf-8'));
         })
 
         // Sort by timestamp in descending order (most recently updated tasks first)
@@ -528,8 +528,8 @@ export class DefaultRequestHandler implements A2ARequestHandler {
         return {
             tasks: paginatedTasks,
             totalSize: filteredTasks.length,
-            pageSize: paginatedTasks.length, // Actual number of tasks returned in this page
-            nextPageToken: nextPageToken,
+            pageSize: paginatedTasks.length,
+            nextPageToken: Buffer.from(nextPageToken).toString('base64'), // Convert to base64
         };
     }
 

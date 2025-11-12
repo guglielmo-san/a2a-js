@@ -1,6 +1,7 @@
-import { JSONRPCErrorResponse, MessageSendParams, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, A2ARequest, JSONRPCResponse, DeleteTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams } from "../../types.js";
+import { JSONRPCErrorResponse, MessageSendParams, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, A2ARequest, JSONRPCResponse, DeleteTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams, ListTasksParams } from "../../types.js";
 import { A2AError } from "../error.js";
 import { A2ARequestHandler } from "../request_handler/a2a_request_handler.js";
+import { isValidUnixTimestampMs } from "../utils.js";
 
 /**
  * Handles JSON-RPC transport layer, routing requests to A2ARequestHandler.
@@ -126,6 +127,9 @@ export class JsonRpcTransportHandler {
                         );
                         break;
                     case 'tasks/list':
+                        if (!this.paramsTasksListAreValid(rpcRequest.params)) {
+                            throw A2AError.invalidParams(`Invalid method parameters.`);
+                        }
                         result = await this.requestHandler.listTasks(rpcRequest.params);
                         break;
                     default:
@@ -179,6 +183,23 @@ export class JsonRpcTransportHandler {
             if (key === "") {
                 return false;
             }
+        }
+        return true;
+    }
+
+    private paramsTasksListAreValid(params: ListTasksParams): boolean {
+        if(params.pageSize > 100 || params.pageSize < 1) {
+            return false;
+        }
+        if(params.pageToken && Buffer.from(params.pageToken, 'base64').toString('base64') !== params.pageToken){
+            return false;
+        }
+        if(params.historyLength && params.historyLength<0){
+            return false;
+        }
+        if(params.lastUpdatedAfter && !isValidUnixTimestampMs(params.lastUpdatedAfter)){
+            return false;
+        
         }
         return true;
     }
