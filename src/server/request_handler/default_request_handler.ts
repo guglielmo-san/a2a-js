@@ -338,6 +338,39 @@ export class DefaultRequestHandler implements A2ARequestHandler {
         return task;
     }
 
+    async listTasks(
+        params: ListTasksParams
+    ): Promise<ListTasksResult> {
+
+        
+        
+        filteredTasks.forEach(task => {
+            let historyLength = params.historyLength || 0;
+            task.history = task.history?.slice(0, historyLength);
+
+            if (!params.includeArtifacts && task.artifacts){
+            task.artifacts = []
+            }
+        })
+        
+        // Apply pagination
+        const paginatedTasks = filteredTasks.slice(0, params.pageSize);
+        let nextPageToken = '';
+        if (filteredTasks.length > paginatedTasks.length) {
+            const lastTaskOnPage = paginatedTasks[paginatedTasks.length - 1];
+            if (lastTaskOnPage && lastTaskOnPage.status.timestamp) {
+                nextPageToken = lastTaskOnPage.status.timestamp;
+            }
+        }
+
+        return {
+            tasks: paginatedTasks,
+            totalSize: filteredTasks.length,
+            pageSize: paginatedTasks.length,
+            nextPageToken: Buffer.from(nextPageToken).toString('base64'), // Convert to base64
+        };
+    }
+
     async cancelTask(params: TaskIdParams): Promise<Task> {
         const task = await this.taskStore.load(params.id);
         if (!task) {
@@ -476,60 +509,6 @@ export class DefaultRequestHandler implements A2ARequestHandler {
         const { id: taskId, pushNotificationConfigId } = params;
 
         await this.pushNotificationStore?.delete(taskId, pushNotificationConfigId);
-    }
-
-    async listTasks(
-        params: ListTasksParams
-    ): Promise<ListTasksResult> {
-
-        const filteredTasks = (await this.taskStore.list(params))
-        // Apply filters
-        .filter(task => !params.contextId || task.contextId === params.contextId)
-        .filter(task => !params.status || task.status.state === params.status)
-        .filter(task => {
-            if (!params.lastUpdatedAfter) return true;
-            if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'lastUpdatedAfter'
-            return new Date(task.status.timestamp) > new Date(params.lastUpdatedAfter);
-        })
-        .filter(task => {
-            if (!params.pageToken) return true;
-            if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'pageToken'
-            // pageToken is a timestamp, so we want tasks older than the pageToken
-            return new Date(task.status.timestamp) < new Date(Buffer.from(params.pageToken, 'base64').toString('utf-8'));
-        })
-
-        // Sort by timestamp in descending order (most recently updated tasks first)
-        filteredTasks.sort((t1, t2) => {
-        const ts1 = t1.status.timestamp ? new Date(t1.status.timestamp).getTime() : 0;
-        const ts2 = t2.status.timestamp ? new Date(t2.status.timestamp).getTime() : 0;
-        return ts2 - ts1;
-        });
-        
-        filteredTasks.forEach(task => {
-            let historyLength = params.historyLength || 0;
-            task.history = task.history?.slice(0, historyLength);
-
-            if (!params.includeArtifacts && task.artifacts){
-            task.artifacts = []
-            }
-        })
-        
-        // Apply pagination
-        const paginatedTasks = filteredTasks.slice(0, params.pageSize);
-        let nextPageToken = '';
-        if (filteredTasks.length > paginatedTasks.length) {
-            const lastTaskOnPage = paginatedTasks[paginatedTasks.length - 1];
-            if (lastTaskOnPage && lastTaskOnPage.status.timestamp) {
-                nextPageToken = lastTaskOnPage.status.timestamp;
-            }
-        }
-
-        return {
-            tasks: paginatedTasks,
-            totalSize: filteredTasks.length,
-            pageSize: paginatedTasks.length,
-            nextPageToken: Buffer.from(nextPageToken).toString('base64'), // Convert to base64
-        };
     }
 
     async *resubscribe(

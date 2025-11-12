@@ -52,6 +52,34 @@ export class InMemoryTaskStore implements TaskStore {
 
   async list(params: ListTasksParams): Promise<Task[]> {
     // Returns the list of saved tasks
-    return Array.from(this.store.values());
-  }
+    const filteredTasks = Array.from(this.store.values())
+        // Apply filters
+        .filter(task => !params.contextId || task.contextId === params.contextId)
+        .filter(task => !params.status || task.status.state === params.status)
+        .filter(task => {
+            if (!params.lastUpdatedAfter) return true;
+            if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'lastUpdatedAfter'
+            return new Date(task.status.timestamp) > new Date(params.lastUpdatedAfter);
+        })
+        .filter(task => {
+            if (!params.pageToken) return true;
+            if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'pageToken'
+            // pageToken is a timestamp, so we want tasks older than the pageToken
+            return new Date(task.status.timestamp) < new Date(Buffer.from(params.pageToken, 'base64').toString('utf-8'));
+        })
+
+        // Sort by timestamp in descending order (most recently updated tasks first)
+        filteredTasks.sort((t1, t2) => {
+        const ts1 = t1.status.timestamp ? new Date(t1.status.timestamp).getTime() : 0;
+        const ts2 = t2.status.timestamp ? new Date(t2.status.timestamp).getTime() : 0;
+        return ts2 - ts1;
+        });
+    // Make a copy of the history and artifacts as they might get modified
+    return filteredTasks.map(task => ({
+            ...task,
+            history: task.history ? [...task.history] : undefined,
+            artifacts: task.artifacts ? [...task.artifacts] : undefined,
+          }));
+    }
+  
 }

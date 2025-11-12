@@ -22,6 +22,7 @@ describe('JsonRpcTransportHandler', () => {
             getTaskPushNotificationConfig: sinon.stub(),
             listTaskPushNotificationConfigs: sinon.stub(),
             deleteTaskPushNotificationConfig: sinon.stub(),
+            listTasks: sinon.stub(),
             resubscribe: sinon.stub(),
         };
         transportHandler = new JsonRpcTransportHandler(mockRequestHandler);
@@ -133,6 +134,138 @@ describe('JsonRpcTransportHandler', () => {
             const request = { jsonrpc: '2.0', method: 'message/send', id: 456, params: {"this": "is a dict"} };
             const response = await transportHandler.handle(request);
             expect(response).to.have.property('result');
+        });
+    });
+
+    describe('paramsTasksListAreValid method validation for tasks/list api', () => {
+        beforeEach(() => {
+            // Stub listTasks to return a successful but empty result for valid calls
+            (mockRequestHandler.listTasks as sinon.SinonStub).resolves({ tasks: [], totalSize: 0, pageSize: 0, nextPageToken: '' });
+        });
+
+        // Test cases for pageSize
+        it('should return an invalid params error for pageSize less than 1', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { pageSize: 0 } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should return an invalid params error for pageSize greater than 100', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { pageSize: 101 } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should allow valid pageSize (1 to 100)', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { pageSize: 50 } };
+            const response = await transportHandler.handle(request);
+            expect(response).to.not.have.property('error');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).calledOnceWith(request.params)).to.be.true;
+        });
+
+        // Test cases for pageToken
+        it('should return an invalid params error for invalid base64 pageToken', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { pageToken: 'not-base64!' } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should allow valid base64 pageToken', async () => {
+            const validBase64Token = Buffer.from('some-timestamp').toString('base64');
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { pageToken: validBase64Token } };
+            const response = await transportHandler.handle(request);
+            expect(response).to.not.have.property('error');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).calledOnceWith(request.params)).to.be.true;
+        });
+
+        // Test cases for historyLength
+        it('should return an invalid params error for negative historyLength', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { historyLength: -1 } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should allow valid non-negative historyLength', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { historyLength: 0 } };
+            const response = await transportHandler.handle(request);
+            expect(response).to.not.have.property('error');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).calledOnceWith(request.params)).to.be.true;
+        });
+
+        // Test cases for lastUpdatedAfter
+        it('should return an invalid params error for invalid lastUpdatedAfter (negative)', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { lastUpdatedAfter: -1000 } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should return an invalid params error for invalid lastUpdatedAfter (float)', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { lastUpdatedAfter: 12345.67 } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should return an invalid params error for invalid lastUpdatedAfter (non-number)', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { lastUpdatedAfter: 'not-a-number' } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should allow valid lastUpdatedAfter (positive integer)', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { lastUpdatedAfter: 1678886400000 } }; // March 15, 2023 12:00:00 AM UTC
+            const response = await transportHandler.handle(request);
+            expect(response).to.not.have.property('error');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).calledOnceWith(request.params)).to.be.true;
+        });
+
+        // Test cases for status
+        it('should return an invalid params error for invalid status string', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { status: 'invalid-state' } };
+            const response = await transportHandler.handle(request) as JSONRPCErrorResponse;
+            expect(response.error.code).to.equal(-32602); // Invalid Params
+            expect(response.error.message).to.equal('Invalid method parameters.');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).notCalled).to.be.true;
+        });
+
+        it('should allow valid status (e.g., "completed")', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: { status: 'completed' } };
+            const response = await transportHandler.handle(request);
+            expect(response).to.not.have.property('error');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).calledOnceWith(request.params)).to.be.true;
+        });
+
+        // Combined valid case
+        it('should allow a valid tasks/list request with multiple valid parameters', async () => {
+            const validBase64Token = Buffer.from('another-timestamp').toString('base64');
+            const request = {
+                jsonrpc: '2.0', method: 'tasks/list', id: 1,
+                params: { pageSize: 20, pageToken: validBase64Token, historyLength: 5, lastUpdatedAfter: 1678886400000, status: 'failed' }
+            };
+            const response = await transportHandler.handle(request);
+            expect(response).to.not.have.property('error');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).calledOnceWith(request.params)).to.be.true;
+        });
+
+        // Valid case with no params
+        it('should allow a valid tasks/list request with no parameters', async () => {
+            const request = { jsonrpc: '2.0', method: 'tasks/list', id: 1, params: {} };
+            const response = await transportHandler.handle(request);
+            expect(response).to.not.have.property('error');
+            expect((mockRequestHandler.listTasks as sinon.SinonStub).calledOnceWith(request.params)).to.be.true;
         });
     });
 });

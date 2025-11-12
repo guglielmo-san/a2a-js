@@ -1,4 +1,4 @@
-import { JSONRPCErrorResponse, MessageSendParams, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, A2ARequest, JSONRPCResponse, DeleteTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams, ListTasksParams } from "../../types.js";
+import { JSONRPCErrorResponse, MessageSendParams, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, A2ARequest, JSONRPCResponse, DeleteTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams, ListTasksParams, TaskState } from "../../types.js";
 import { A2AError } from "../error.js";
 import { A2ARequestHandler } from "../request_handler/a2a_request_handler.js";
 import { isValidUnixTimestampMs } from "../utils.js";
@@ -102,6 +102,12 @@ export class JsonRpcTransportHandler {
                     case 'tasks/get':
                         result = await this.requestHandler.getTask(rpcRequest.params);
                         break;
+                    case 'tasks/list':
+                        if (!this.paramsTasksListAreValid(rpcRequest.params)) {
+                            throw A2AError.invalidParams(`Invalid method parameters.`);
+                        }
+                        result = await this.requestHandler.listTasks(rpcRequest.params);
+                        break;
                     case 'tasks/cancel':
                         result = await this.requestHandler.cancelTask(rpcRequest.params);
                         break;
@@ -125,12 +131,6 @@ export class JsonRpcTransportHandler {
                         result = await this.requestHandler.listTaskPushNotificationConfigs(
                             rpcRequest.params
                         );
-                        break;
-                    case 'tasks/list':
-                        if (!this.paramsTasksListAreValid(rpcRequest.params)) {
-                            throw A2AError.invalidParams(`Invalid method parameters.`);
-                        }
-                        result = await this.requestHandler.listTasks(rpcRequest.params);
                         break;
                     default:
                         throw A2AError.methodNotFound(method);
@@ -188,18 +188,21 @@ export class JsonRpcTransportHandler {
     }
 
     private paramsTasksListAreValid(params: ListTasksParams): boolean {
-        if(params.pageSize && (params.pageSize > 100 || params.pageSize < 1)) {
+        if(params.pageSize !== undefined && (params.pageSize > 100 || params.pageSize < 1)) {
             return false;
         }
-        if(params.pageToken && Buffer.from(params.pageToken, 'base64').toString('base64') !== params.pageToken){
+        if(params.pageToken !== undefined && Buffer.from(params.pageToken, 'base64').toString('base64') !== params.pageToken){
             return false;
         }
-        if(params.historyLength && params.historyLength<0){
+        if(params.historyLength !== undefined && params.historyLength<0){
             return false;
         }
-        if(params.lastUpdatedAfter && !isValidUnixTimestampMs(params.lastUpdatedAfter)){
+        if(params.lastUpdatedAfter !== undefined && !isValidUnixTimestampMs(params.lastUpdatedAfter)){
             return false;
-        
+        }
+        const terminalStates: string[] = ["completed", "failed", "canceled", "rejected"];
+        if(params.status !== undefined && !terminalStates.includes(params.status)){
+            return false;
         }
         return true;
     }
