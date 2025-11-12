@@ -188,7 +188,7 @@ export class JsonRpcTransportHandler {
     }
 
     private paramsTasksListAreValid(params: ListTasksParams): boolean {
-        if(params.pageSize > 100 || params.pageSize < 1) {
+        if(params.pageSize && (params.pageSize > 100 || params.pageSize < 1)) {
             return false;
         }
         if(params.pageToken && Buffer.from(params.pageToken, 'base64').toString('base64') !== params.pageToken){

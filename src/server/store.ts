@@ -52,6 +52,6 @@ export class InMemoryTaskStore implements TaskStore {
 
   async list(params: ListTasksParams): Promise<Task[]> {
     // Returns the list of saved tasks
-    return {...Array.from(this.store.values())};
+    return Array.from(this.store.values());
   }
 }

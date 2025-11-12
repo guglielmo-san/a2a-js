@@ -482,9 +482,8 @@ export class DefaultRequestHandler implements A2ARequestHandler {
         params: ListTasksParams
     ): Promise<ListTasksResult> {
 
-        const filteredTasks = await this.taskStore.list(params)
+        const filteredTasks = (await this.taskStore.list(params))
         // Apply filters
-        filteredTasks
         .filter(task => !params.contextId || task.contextId === params.contextId)
         .filter(task => !params.status || task.status.state === params.status)
         .filter(task => {
