@@ -13,6 +13,8 @@ import { A2ARequestHandler } from "./a2a_request_handler.js";
 import { InMemoryPushNotificationStore, PushNotificationStore } from '../push_notification/push_notification_store.js';
 import { PushNotificationSender } from '../push_notification/push_notification_sender.js';
 import { DefaultPushNotificationSender } from '../push_notification/default_push_notification_sender.js';
+import { DEFAULT_PAGE_SIZE } from '../../constants.js';
+import { isValidUnixTimestampMs } from '../utils.js';
 
 const terminalStates: TaskState[] = ["completed", "failed", "canceled", "rejected"];
 
@@ -341,33 +343,10 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     async listTasks(
         params: ListTasksParams
     ): Promise<ListTasksResult> {
-
-        const filteredTasks = await this.taskStore.list(params);
-        filteredTasks.forEach(task => {
-            const historyLength = params.historyLength ?? 0;
-            task.history = historyLength > 0 ? task.history?.slice(-historyLength) : [];
-
-            if (!params.includeArtifacts && task.artifacts){
-                task.artifacts = []
-            }
-        })
-        
-        // Apply pagination
-        const paginatedTasks = filteredTasks.slice(0, params.pageSize);
-        let nextPageToken = '';
-        if (filteredTasks.length > paginatedTasks.length) {
-            const lastTaskOnPage = paginatedTasks[paginatedTasks.length - 1];
-            if (lastTaskOnPage && lastTaskOnPage.status.timestamp) {
-                nextPageToken = lastTaskOnPage.status.timestamp;
-            }
+        if (!this.paramsTasksListAreValid(params)) {
+            throw A2AError.invalidParams(`Invalid method parameters.`);
         }
-
-        return {
-            tasks: paginatedTasks,
-            totalSize: filteredTasks.length,
-            pageSize: paginatedTasks.length,
-            nextPageToken: Buffer.from(nextPageToken).toString('base64'), // Convert to base64
-        };
+        return await this.taskStore.list(params);
     }
 
     async cancelTask(params: TaskIdParams): Promise<Task> {
@@ -597,5 +576,26 @@ export class DefaultRequestHandler implements A2ARequestHandler {
         
         // Send push notification in the background.
         this.pushNotificationSender?.send(task);
+    }
+
+    // Check if the params for the TasksList function are valid
+    private paramsTasksListAreValid(params: ListTasksParams): boolean {
+        if(params.pageSize !== undefined && (params.pageSize > 100 || params.pageSize < 1)) {
+            return false;
+        }
+        if(params.pageToken !== undefined && Buffer.from(params.pageToken, 'base64').toString('base64') !== params.pageToken){
+            return false;
+        }
+        if(params.historyLength !== undefined && params.historyLength<0){
+            return false;
+        }
+        if(params.lastUpdatedAfter !== undefined && !isValidUnixTimestampMs(params.lastUpdatedAfter)){
+            return false;
+        }
+        const terminalStates: string[] = ["completed", "failed", "canceled", "rejected"];
+        if(params.status !== undefined && !terminalStates.includes(params.status)){
+            return false;
+        }
+        return true;
     }
 }

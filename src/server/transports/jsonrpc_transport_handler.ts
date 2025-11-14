@@ -103,9 +103,6 @@ export class JsonRpcTransportHandler {
                         result = await this.requestHandler.getTask(rpcRequest.params);
                         break;
                     case 'tasks/list':
-                        if (!this.paramsTasksListAreValid(rpcRequest.params)) {
-                            throw A2AError.invalidParams(`Invalid method parameters.`);
-                        }
                         result = await this.requestHandler.listTasks(rpcRequest.params);
                         break;
                     case 'tasks/cancel':
@@ -183,26 +180,6 @@ export class JsonRpcTransportHandler {
             if (key === "") {
                 return false;
             }
-        }
-        return true;
-    }
-
-    private paramsTasksListAreValid(params: ListTasksParams): boolean {
-        if(params.pageSize !== undefined && (params.pageSize > 100 || params.pageSize < 1)) {
-            return false;
-        }
-        if(params.pageToken !== undefined && Buffer.from(params.pageToken, 'base64').toString('base64') !== params.pageToken){
-            return false;
-        }
-        if(params.historyLength !== undefined && params.historyLength<0){
-            return false;
-        }
-        if(params.lastUpdatedAfter !== undefined && !isValidUnixTimestampMs(params.lastUpdatedAfter)){
-            return false;
-        }
-        const terminalStates: string[] = ["completed", "failed", "canceled", "rejected"];
-        if(params.status !== undefined && !terminalStates.includes(params.status)){
-            return false;
         }
         return true;
     }

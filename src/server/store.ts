@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs, { lutimes } from "fs/promises";
 import path from "path";
 import {ListTasksParams, ListTasksResult, Task} from "../types.js";
 import { A2AError } from "./error.js";
@@ -7,6 +7,7 @@ import {
   isArtifactUpdate,
   isTaskStatusUpdate,
 } from "./utils.js";
+import { DEFAULT_PAGE_SIZE } from "../constants.js";
 
 /**
  * Simplified interface for task storage providers.
@@ -28,7 +29,7 @@ export interface TaskStore {
    */
   load(taskId: string): Promise<Task | undefined>;
 
-  list(params: ListTasksParams): Promise<Task[]>;
+  list(params: ListTasksParams): Promise<ListTasksResult>;
 }
 
 // ========================
@@ -50,36 +51,66 @@ export class InMemoryTaskStore implements TaskStore {
     this.store.set(task.id, {...task});
   }
 
-  async list(params: ListTasksParams): Promise<Task[]> {
+  async list(params: ListTasksParams): Promise<ListTasksResult> {
     // Returns the list of saved tasks
+    const lastUpdatedAfterDate = params.lastUpdatedAfter ? new Date(params.lastUpdatedAfter) : undefined;
+    const pageTokenDate = params.pageToken ? new Date(Buffer.from(params.pageToken, 'base64').toString('utf-8')) : undefined;
     const filteredTasks = Array.from(this.store.values())
-        // Apply filters
-        .filter(task => !params.contextId || task.contextId === params.contextId)
-        .filter(task => !params.status || task.status.state === params.status)
-        .filter(task => {
-            if (!params.lastUpdatedAfter) return true;
-            if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'lastUpdatedAfter'
-            return new Date(task.status.timestamp) > new Date(params.lastUpdatedAfter);
-        })
-        .filter(task => {
-            if (!params.pageToken) return true;
-            if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'pageToken'
-            // pageToken is a timestamp, so we want tasks older than the pageToken
-            return new Date(task.status.timestamp) < new Date(Buffer.from(params.pageToken, 'base64').toString('utf-8'));
-        })
+      // Apply filters
+      .filter(task => !params.contextId || task.contextId === params.contextId)
+      .filter(task => !params.status || task.status.state === params.status)
+      .filter(task => {
+          if (!params.lastUpdatedAfter) return true;
+          if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'lastUpdatedAfter'
+          return new Date(task.status.timestamp) > lastUpdatedAfterDate;
+      })
+      .filter(task => {
+          if (!params.pageToken) return true;
+          if (!task.status.timestamp) return false; // Tasks without timestamp don't match 'pageToken'
+          // pageToken is a timestamp, so we want tasks older than the pageToken
+          return new Date(task.status.timestamp) < pageTokenDate;
+      })
 
-        // Sort by timestamp in descending order (most recently updated tasks first)
-        filteredTasks.sort((t1, t2) => {
-        const ts1 = t1.status.timestamp ? new Date(t1.status.timestamp).getTime() : 0;
-        const ts2 = t2.status.timestamp ? new Date(t2.status.timestamp).getTime() : 0;
-        return ts2 - ts1;
-        });
-    // Make a copy of the history and artifacts as they might get modified
-    return filteredTasks.map(task => ({
-            ...task,
-            history: task.history ? [...task.history] : undefined,
-            artifacts: task.artifacts ? [...task.artifacts] : undefined,
-          }));
+    // Sort by timestamp in descending order (most recently updated tasks first)
+    filteredTasks.sort((t1, t2) => {
+      const ts1 = t1.status.timestamp ? new Date(t1.status.timestamp).getTime() : 0;
+      const ts2 = t2.status.timestamp ? new Date(t2.status.timestamp).getTime() : 0;
+      return ts2 - ts1;
+    });
+
+    // Apply pagination
+    let paginatedTasks = filteredTasks.slice(0, params.pageSize ?? DEFAULT_PAGE_SIZE);
+    let nextPageToken = '';
+    if (filteredTasks.length > paginatedTasks.length) {
+        const lastTaskOnPage = paginatedTasks[paginatedTasks.length - 1];
+        if (lastTaskOnPage && lastTaskOnPage.status.timestamp) {
+            nextPageToken = lastTaskOnPage.status.timestamp;
+        }
     }
+
+    paginatedTasks = paginatedTasks.map(task => {
+      // Make a copy of the tasks to avoid modification of original stored object
+      const newTask = {
+        ...task,
+        history: task.history ? [...task.history] : undefined,
+        artifacts: task.artifacts ? [...task.artifacts] : undefined,
+      };
+
+      const historyLength = params.historyLength ?? 0;
+      newTask.history = historyLength > 0 ? newTask.history?.slice(-historyLength) : [];
+
+      if (!params.includeArtifacts && newTask.artifacts){
+          newTask.artifacts = [];
+      }
+      return newTask;
+    })
+
+    return {
+        tasks: paginatedTasks,
+        totalSize: filteredTasks.length,
+        pageSize: paginatedTasks.length,
+        nextPageToken: Buffer.from(nextPageToken).toString('base64'), // Convert to base64
+    };
+  }
   
 }
