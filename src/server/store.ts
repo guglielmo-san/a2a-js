@@ -29,6 +29,13 @@ export interface TaskStore {
    */
   load(taskId: string): Promise<Task | undefined>;
 
+  /**
+   * Retrieves a paginated and filtered list of tasks from the store.
+   *
+   * @param params An object containing criteria for filtering, sorting, and pagination.
+   * @returns A promise resolving to a `ListTasksResult` object, which includes the filtered and paginated tasks,
+   *   the total number of tasks matching the criteria, the actual page size, and a token for the next page (if available).
+   */
   list(params: ListTasksParams): Promise<ListTasksResult>;
 }
 

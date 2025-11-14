@@ -1,7 +1,6 @@
 import { JSONRPCErrorResponse, MessageSendParams, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, A2ARequest, JSONRPCResponse, DeleteTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams, ListTasksParams, TaskState } from "../../types.js";
 import { A2AError } from "../error.js";
 import { A2ARequestHandler } from "../request_handler/a2a_request_handler.js";
-import { isValidUnixTimestampMs } from "../utils.js";
 
 /**
  * Handles JSON-RPC transport layer, routing requests to A2ARequestHandler.
