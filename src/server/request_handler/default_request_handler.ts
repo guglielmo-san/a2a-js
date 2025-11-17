@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 
-import { Message, AgentCard, PushNotificationConfig, Task, MessageSendParams, TaskState, TaskStatusUpdateEvent, TaskArtifactUpdateEvent, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, DeleteTaskPushNotificationConfigParams, GetTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams } from "../../types.js";
+import { Message, AgentCard, Task, MessageSendParams, TaskState, TaskStatusUpdateEvent, TaskArtifactUpdateEvent, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, DeleteTaskPushNotificationConfigParams, GetTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams } from "../../types.js";
 import { AgentExecutor } from "../agent_execution/agent_executor.js";
 import { RequestContext } from "../agent_execution/request_context.js";
 import { A2AError } from "../error.js";
 import { ExecutionEventBusManager, DefaultExecutionEventBusManager } from "../events/execution_event_bus_manager.js";
-import { AgentExecutionEvent, ExecutionEventBus } from "../events/execution_event_bus.js";
+import { AgentExecutionEvent } from "../events/execution_event_bus.js";
 import { ExecutionEventQueue } from "../events/execution_event_queue.js";
 import { ResultManager } from "../result_manager.js";
 import { TaskStore } from "../store.js";

@@ -23,8 +23,8 @@ import { A2AExpressApp } from "../../../server/express/index.js";
 class SampleAgentExecutor implements AgentExecutor {
 
   public cancelTask = async (
-    taskId: string,
-    eventBus: ExecutionEventBus,
+    _taskId: string,
+    _eventBus: ExecutionEventBus,
   ): Promise<void> => { };
 
   async execute(
