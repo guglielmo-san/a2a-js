@@ -9,14 +9,15 @@ import globals from 'globals';
 export default defineConfig(
   eslint.configs.recommended,
   tseslint.configs.recommended,
-  eslintConfigPrettier,
+  eslintConfigPrettier, // Disable formatting eslint rules
   {
     ignores: ['dist/', 'node_modules/']
   },
   {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off', // Disable the no-explicit-any rule for test files
-      "@typescript-eslint/no-unused-vars": ["error", {
+      '@typescript-eslint/no-explicit-any': 'off', // Allow the usage of `any` in the project
+      "@typescript-eslint/no-unused-vars": ["error", { 
+        // Ignore error for unused args and caught errors if with '_' prefix
         "argsIgnorePattern": "^_",
         "caughtErrorsIgnorePattern": "^_",
       }]
@@ -25,12 +26,14 @@ export default defineConfig(
   {
     "files": ["test/**/*.spec.ts"],
     "rules": {
-      '@typescript-eslint/no-unused-expressions': 'off'
+      '@typescript-eslint/no-unused-expressions': 'off', // Allow unused expressions in test files, for compatibility with 'chai'
+      '@typescript-eslint/no-unsafe-function-type': 'off' // Allow unsafe Function type in test files
     }
   },
   {
     languageOptions: {
       globals: {
+        // Define global variables for Node.js environment
         ...globals.node,
       }
     }
