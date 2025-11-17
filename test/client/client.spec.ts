@@ -87,7 +87,6 @@ describe('A2AClient Basic Tests', () => {
       let caughtError: Error | undefined;
       try {
         // Arrange: Ensure no global fetch is defined for this test
-        // @ts-expect-error
         global.fetch = undefined;
 
         // Act: Instantiate the client without providing a custom fetch implementation.
@@ -403,7 +402,6 @@ describe('A2AClient Basic Tests', () => {
 });
 
 describe('Extension Methods', () => {
-  let client: A2AClient;
   let mockFetch: sinon.SinonStub;
   let originalConsoleError: typeof console.error;
   const agentCardUrl = `https://test-agent.example.com/${AGENT_CARD_PATH}`;
@@ -415,7 +413,7 @@ describe('Extension Methods', () => {
 
     // Create a fresh mock fetch for each test
     mockFetch = createMockFetch();
-    client = await A2AClient.fromCardUrl(agentCardUrl, {
+    await A2AClient.fromCardUrl(agentCardUrl, {
       fetchImpl: mockFetch
     });
   });
@@ -435,18 +433,6 @@ describe('Extension Methods', () => {
       interface CustomExtensionParams {
         query: string;
         limit: number;
-      }
-      
-      // Define the expected response type
-      // Define custom extension result type
-      interface CustomExtensionResult {
-        result: {
-          items: Array<{
-            id: string;
-            name: string;
-          }>;
-          totalCount: number;
-        };
       }
       
       // Set up custom params for the test
@@ -571,7 +557,6 @@ describe('Extension Methods', () => {
 });
 
 describe('Push Notification Config Operations', () => {
-  let client: A2AClient;
   let mockFetch: sinon.SinonStub;
   let originalConsoleError: typeof console.error;
 
@@ -582,9 +567,6 @@ describe('Push Notification Config Operations', () => {
     
     // Create a fresh mock fetch for each test
     mockFetch = createMockFetch();
-    client = new A2AClient('https://test-agent.example.com', {
-      fetchImpl: mockFetch
-    });
   });
 
   afterEach(() => {

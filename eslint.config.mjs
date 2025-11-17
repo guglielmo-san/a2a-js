@@ -18,6 +18,7 @@ export default defineConfig(
       '@typescript-eslint/no-explicit-any': 'off', // Disable the no-explicit-any rule for test files
       "@typescript-eslint/no-unused-vars": ["error", {
         "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
       }]
     },
   },

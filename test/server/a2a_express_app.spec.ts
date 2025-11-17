@@ -1,5 +1,5 @@
 import 'mocha';
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import sinon, { SinonStub } from 'sinon';
 import express, { Express, Request, Response } from 'express';
 import request from 'supertest';
@@ -10,7 +10,6 @@ import { JsonRpcTransportHandler } from '../../src/server/transports/jsonrpc_tra
 import { AgentCard, JSONRPCSuccessResponse, JSONRPCErrorResponse } from '../../src/index.js';
 import { AGENT_CARD_PATH } from '../../src/constants.js';
 import { A2AError } from '../../src/server/error.js';
-import { parseArgs } from 'util';
 
 describe('A2AExpressApp', () => {
     let mockRequestHandler: A2ARequestHandler;

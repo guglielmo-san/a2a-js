@@ -1156,7 +1156,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
                 status: { state: "submitted" },
                 kind: 'task'
             });
-            bus && bus.finished && bus.finished();
+            bus.finished();
         });
         await handler.sendMessage(params);
         expect(capturedContextId).to.equal('incoming-ctx-id');
@@ -1189,7 +1189,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
                 status: { state: "submitted" },
                 kind: 'task'
             });
-            bus && bus.finished && bus.finished();
+            bus.finished();
         });
         await handler.sendMessage(params);
         expect(capturedContextId).to.equal(taskContextId);
@@ -1213,7 +1213,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
                 status: { state: "submitted" },
                 kind: 'task'
             });
-            bus && bus.finished && bus.finished();
+            bus.finished();
         });
         await handler.sendMessage(params);
         expect(capturedContextId).to.be.a('string').and.not.empty;
