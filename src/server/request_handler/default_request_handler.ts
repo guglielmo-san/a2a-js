@@ -64,7 +64,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     private async _createRequestContext(
         incomingMessage: Message,
         taskId: string,
-        isStream: boolean,
+        _isStream: boolean,
     ): Promise<RequestContext> {
         let task: Task | undefined;
         let referenceTasks: Task[] | undefined;

@@ -13,7 +13,6 @@ import {
   DeleteTaskPushNotificationConfigSuccessResponse,
   JSONRPCErrorResponse,
   JSONRPCResponse,
-  JSONRPCSuccessResponse
 } from '../../src/types.js';
 import { AGENT_CARD_PATH } from '../../src/constants.js';
 import { extractRequestId, createResponse, createAgentCardResponse, createMockAgentCard, createMockFetch } from './util.js';
@@ -88,7 +87,7 @@ describe('A2AClient Basic Tests', () => {
       let caughtError: Error | undefined;
       try {
         // Arrange: Ensure no global fetch is defined for this test
-        // @ts-ignore
+        // @ts-expect-error
         global.fetch = undefined;
 
         // Act: Instantiate the client without providing a custom fetch implementation.
@@ -735,4 +734,3 @@ describe('Push Notification Config Operations', () => {
     });
   });
 });
-
