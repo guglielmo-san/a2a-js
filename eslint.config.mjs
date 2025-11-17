@@ -23,6 +23,12 @@ export default defineConfig(
     },
   },
   {
+    "files": ["test/**/*.spec.ts"],
+    "rules": {
+      '@typescript-eslint/no-unused-expressions': 'off'
+    }
+  },
+  {
     languageOptions: {
       globals: {
         ...globals.node,

@@ -557,16 +557,12 @@ describe('Extension Methods', () => {
 });
 
 describe('Push Notification Config Operations', () => {
-  let mockFetch: sinon.SinonStub;
   let originalConsoleError: typeof console.error;
 
   beforeEach(() => {
     // Suppress console.error during tests to avoid noise
     originalConsoleError = console.error;
     console.error = () => {};
-    
-    // Create a fresh mock fetch for each test
-    mockFetch = createMockFetch();
   });
 
   afterEach(() => {
