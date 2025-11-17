@@ -1,4 +1,4 @@
-import { JSONRPCErrorResponse, MessageSendParams, TaskQueryParams, TaskIdParams, TaskPushNotificationConfig, A2ARequest, JSONRPCResponse, DeleteTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams } from "../../types.js";
+import { JSONRPCErrorResponse, MessageSendParams, TaskIdParams, A2ARequest, JSONRPCResponse } from "../../types.js";
 import { ServerCallContext } from "../context.js";
 import { A2AError } from "../error.js";
 import { A2ARequestHandler } from "../request_handler/a2a_request_handler.js";
