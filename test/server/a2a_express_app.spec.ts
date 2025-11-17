@@ -1,5 +1,5 @@
 import 'mocha';
-import { assert } from 'chai';
+import { assert, expect } from 'chai';
 import sinon, { SinonStub } from 'sinon';
 import express, { Express, Request, Response } from 'express';
 import request from 'supertest';
