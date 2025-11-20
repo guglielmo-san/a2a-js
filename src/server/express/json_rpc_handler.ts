@@ -37,7 +37,12 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
 
   router.post('/', async (req: Request, res: Response) => {
     try {
+<<<<<<< HEAD
       const user = await options.userBuilder(req);
+=======
+      const agentCard = await options.requestHandler.getAgentCard();
+      checkAuthentication(req.headers, agentCard);
+>>>>>>> cd9163c (first commint implementation of authentication on server side)
       const context = new ServerCallContext(
         getRequestedExtensions(req.header(HTTP_EXTENSION_HEADER)),
         user ?? new UnauthenticatedUser()
