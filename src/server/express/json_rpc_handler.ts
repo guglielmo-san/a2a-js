@@ -17,7 +17,11 @@ import { UserBuilder } from './common.js';
 
 export interface JsonRpcHandlerOptions {
   requestHandler: A2ARequestHandler;
+<<<<<<< HEAD
   userBuilder: UserBuilder;
+=======
+  userBuilder?: UserBuilder;
+>>>>>>> 6fbf682 (feat: support authentication on server side (#195))
 }
 
 /**
@@ -39,6 +43,7 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
     try {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       const user = await options.userBuilder(req);
 =======
       const agentCard = await options.requestHandler.getAgentCard();
@@ -46,6 +51,9 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
 >>>>>>> cd9163c (first commint implementation of authentication on server side)
 =======
 >>>>>>> 025308d (implementation of authentication sample wip)
+=======
+      const user = await options.userBuilder?.(req);
+>>>>>>> 6fbf682 (feat: support authentication on server side (#195))
       const context = new ServerCallContext(
         getRequestedExtensions(req.header(HTTP_EXTENSION_HEADER)),
         user ?? new UnauthenticatedUser()

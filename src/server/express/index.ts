@@ -4,4 +4,8 @@
  */
 
 export { A2AExpressApp } from './a2a_express_app.js';
+<<<<<<< HEAD
 export { UserBuilder } from './common.js';
+=======
+export type { UserBuilder } from './common.js';
+>>>>>>> 6fbf682 (feat: support authentication on server side (#195))

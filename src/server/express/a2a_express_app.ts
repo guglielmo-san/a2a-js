@@ -8,12 +8,18 @@ import { UserBuilder } from './common.js';
 
 export class A2AExpressApp {
   private requestHandler: A2ARequestHandler;
+<<<<<<< HEAD
   private userBuilder: UserBuilder;
 
   constructor(
     requestHandler: A2ARequestHandler,
     userBuilder: UserBuilder = UserBuilder.NoAuthentication
   ) {
+=======
+  private userBuilder?: UserBuilder;
+
+  constructor(requestHandler: A2ARequestHandler, userBuilder?: UserBuilder) {
+>>>>>>> 6fbf682 (feat: support authentication on server side (#195))
     this.requestHandler = requestHandler;
     this.userBuilder = userBuilder;
   }
