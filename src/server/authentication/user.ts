@@ -1,30 +1,14 @@
 export interface User {
-  getName(): string;
   isAuthenticated(): boolean;
+  userName(): string;
 }
 
-export class AuthenticatedUser implements User {
-  private readonly name: string;
-
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  public getName(): string {
-    return this.name;
-  }
-
-  public isAuthenticated(): boolean {
-    return true;
-  }
-}
-
-export class unAuthenticatedUser implements User {
-  public getName(): string {
-    return 'unAuthenticatedUser';
-  }
-
+export class UnauthenticatedUser implements User {
   public isAuthenticated(): boolean {
     return false;
+  }
+
+  public userName(): string {
+    return '';
   }
 }
