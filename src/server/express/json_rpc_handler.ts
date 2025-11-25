@@ -17,7 +17,11 @@ import { UserBuilder } from './common.js';
 
 export interface JsonRpcHandlerOptions {
   requestHandler: A2ARequestHandler;
+<<<<<<< HEAD
   userBuilder: UserBuilder;
+=======
+  userBuilder?: UserBuilder;
+>>>>>>> 9872d93 (feat: support authentication on server side (#195))
 }
 
 /**
@@ -37,7 +41,11 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
 
   router.post('/', async (req: Request, res: Response) => {
     try {
+<<<<<<< HEAD
       const user = await options.userBuilder(req);
+=======
+      const user = await options.userBuilder?.(req);
+>>>>>>> 9872d93 (feat: support authentication on server side (#195))
       const context = new ServerCallContext(
         getRequestedExtensions(req.header(HTTP_EXTENSION_HEADER)),
         user ?? new UnauthenticatedUser()

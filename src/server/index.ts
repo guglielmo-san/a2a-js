@@ -30,6 +30,7 @@ export type { PushNotificationStore } from './push_notification/push_notificatio
 export { InMemoryPushNotificationStore } from './push_notification/push_notification_store.js';
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 export type { User } from './authentication/user.js';
 export { UnauthenticatedUser } from './authentication/user.js';
 =======
@@ -39,3 +40,6 @@ export type { User, UnauthenticatedUser } from './authentication/user.js';
 export type { User } from './authentication/user.js';
 export { UnauthenticatedUser } from './authentication/user.js';
 >>>>>>> f6e2db6 (authentication agent WIP)
+=======
+export type { User, UnauthenticatedUser } from './authentication/user.js';
+>>>>>>> 9872d93 (feat: support authentication on server side (#195))

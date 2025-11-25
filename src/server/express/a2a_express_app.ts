@@ -9,6 +9,7 @@ import { UserBuilder } from './common.js';
 export class A2AExpressApp {
   private requestHandler: A2ARequestHandler;
 <<<<<<< HEAD
+<<<<<<< HEAD
   private userBuilder: UserBuilder;
 
   constructor(
@@ -20,6 +21,11 @@ export class A2AExpressApp {
 
   constructor(requestHandler: A2ARequestHandler, userBuilder?: UserBuilder) {
 >>>>>>> 6fbf682 (feat: support authentication on server side (#195))
+=======
+  private userBuilder?: UserBuilder;
+
+  constructor(requestHandler: A2ARequestHandler, userBuilder?: UserBuilder) {
+>>>>>>> 9872d93 (feat: support authentication on server side (#195))
     this.requestHandler = requestHandler;
     this.userBuilder = userBuilder;
   }
