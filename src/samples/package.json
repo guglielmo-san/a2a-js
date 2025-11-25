@@ -2,6 +2,10 @@
   "name": "samples",
   "version": "1.0.0",
   "description": "Samples for the a2a-js",
+<<<<<<< HEAD
+=======
+  "main": "index.js",
+>>>>>>> 5954614 (implementation of authentication sample wip)
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
