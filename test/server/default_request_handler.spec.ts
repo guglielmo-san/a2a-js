@@ -391,7 +391,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
       message: firstMessage,
     };
 
-    let taskId: string;
+    let taskId: string = '';
 
     (mockAgentExecutor as MockAgentExecutor).execute.callsFake(async (ctx, bus) => {
       taskId = ctx.taskId;
@@ -592,7 +592,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
       message: firstMessage,
     };
 
-    let taskId: string;
+    let taskId: string = '';
 
     (mockAgentExecutor as MockAgentExecutor).execute.callsFake(async (ctx, bus) => {
       taskId = ctx.taskId;
@@ -741,8 +741,8 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
     const finalTask = await mockTaskStore.load(taskId);
 
     // Check the history
-    assert.equal(finalTask.status.state, 'completed');
-    assert.isDefined(finalTask.history, 'Second task should have history');
+    assert.equal(finalTask?.status.state, 'completed');
+    assert.isDefined(finalTask?.history, 'Second task should have history');
     assert.lengthOf(
       finalTask.history!,
       4,
@@ -931,8 +931,8 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
       message: createTestMessage('msg-5', 'Long running task'),
     };
 
-    let taskId;
-    let contextId;
+    let taskId: string = '';
+    let contextId: string = '';
 
     (mockAgentExecutor as MockAgentExecutor).execute.callsFake(async (ctx, bus) => {
       taskId = ctx.taskId;
@@ -1247,7 +1247,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
       },
     };
 
-    let taskId: string;
+    let taskId: string = '';
     (mockAgentExecutor as MockAgentExecutor).execute.callsFake(async (ctx, bus) => {
       taskId = ctx.taskId;
       fakeTaskExecute(ctx, bus);
@@ -1322,7 +1322,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
       },
     };
 
-    let taskId: string;
+    let taskId: string = '';
     (mockAgentExecutor as MockAgentExecutor).execute.callsFake(async (ctx, bus) => {
       taskId = ctx.taskId;
       fakeTaskExecute(ctx, bus);

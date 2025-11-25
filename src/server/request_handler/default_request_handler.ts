@@ -605,7 +605,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       return;
     }
 
-    let taskId: string = '';
+    let taskId: string | undefined = '';
     if (event.kind == 'task') {
       const task = event as Task;
       taskId = task.id;
