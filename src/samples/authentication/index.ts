@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 import express from 'express';
 =======
 import express, { RequestHandler } from 'express';
@@ -7,6 +8,9 @@ import express, { RequestHandler } from 'express';
 =======
 import express from 'express';
 >>>>>>> 460009d (wip authentication sample)
+=======
+import express, { RequestHandler } from 'express';
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
 
 import { AgentCard } from '../../index.js';
 import {
@@ -16,6 +20,7 @@ import {
   DefaultRequestHandler,
 } from '../../server/index.js';
 import { A2AExpressApp } from '../../server/express/index.js';
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -51,12 +56,25 @@ const authenticationAgentCard: AgentCard = {
   description:
     'A sample agent to test the stream functionality and simulate the flow of tasks statuses, with extensions integration.',
 >>>>>>> 5954614 (implementation of authentication sample wip)
+=======
+import { SampleAgentExecutor } from '../agents/sample-agent/agent_executor.js';
+import { authenticationHandler } from './authentication_middleware.js';
+
+
+// --- Server Setup ---
+
+const extensionAgentCard: AgentCard = {
+  name: 'Sample Agent with timestamp extensions',
+  description:
+    'A sample agent to test the stream functionality and simulate the flow of tasks statuses, with extensions integration.',
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
   // Adjust the base URL and port as needed. /a2a is the default base in A2AExpressApp
   url: 'http://localhost:41241/',
   provider: {
     organization: 'A2A Samples',
     url: 'https://example.com/a2a-samples',
   },
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
   version: '1.0.0',
@@ -95,6 +113,20 @@ const authenticationAgentCard: AgentCard = {
     {
       id: 'sample_agent',
 <<<<<<< HEAD
+=======
+  version: '1.0.0', // Incremented version
+  protocolVersion: '0.3.0',
+  capabilities: {
+    streaming: true,
+    pushNotifications: false,
+    stateTransitionHistory: true, // Agent uses history
+  },
+  defaultInputModes: ['text'],
+  defaultOutputModes: ['text', 'task-status'], // task-status is a common output mode
+  skills: [
+    {
+      id: 'sample_agent',
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
       name: 'Sample Agent with extensions',
       description: 'Simulate the general flow of a streaming agent with extensions integration.',
       tags: ['sample'],
@@ -106,6 +138,7 @@ const authenticationAgentCard: AgentCard = {
   supportsAuthenticatedExtendedCard: false,
   security: [{'Bearer': []}],
   securitySchemes: { 'Bearer': { type: 'http', scheme: 'bearer' } }
+<<<<<<< HEAD
 >>>>>>> 5954614 (implementation of authentication sample wip)
 =======
       name: 'Sample Agent with authentication',
@@ -120,6 +153,8 @@ const authenticationAgentCard: AgentCard = {
   security: [{ Bearer: [] }],
   securitySchemes: { Bearer: { type: 'http', scheme: 'bearer' } },
 >>>>>>> 460009d (wip authentication sample)
+=======
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
 };
 
 async function main() {
@@ -127,6 +162,7 @@ async function main() {
   const taskStore: TaskStore = new InMemoryTaskStore();
 
   // 2. Create AgentExecutor
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -137,16 +173,22 @@ async function main() {
   const requestHandler = new DefaultRequestHandler(
     authenticationAgentCard,
 =======
+=======
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
   const agentExecutor: AgentExecutor = new SampleAgentExecutor();
 
   // 3. Create DefaultRequestHandler
   const requestHandler = new DefaultRequestHandler(
     extensionAgentCard,
+<<<<<<< HEAD
 >>>>>>> 5954614 (implementation of authentication sample wip)
+=======
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
     taskStore,
     agentExecutor
   );
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -160,19 +202,27 @@ async function main() {
 =======
   // 5. Create and setup A2AExpressApp
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
+=======
+  // 5. Create and setup A2AExpressApp
+  const appBuilder = new A2AExpressApp(requestHandler);
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
   const authenticationMiddleware: RequestHandler = authenticationHandler;
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationMiddleware]);
 
   // 6. Start the server
+<<<<<<< HEAD
 >>>>>>> 5954614 (implementation of authentication sample wip)
 =======
 >>>>>>> 460009d (wip authentication sample)
+=======
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
   const PORT = process.env.PORT || 41241;
   expressApp.listen(PORT, (err) => {
     if (err) {
       throw err;
     }
     console.log(
+<<<<<<< HEAD
 <<<<<<< HEAD
       `[AuthenticationSampleAgent] Server using new framework started on http://localhost:${PORT}`
     );
@@ -181,13 +231,18 @@ async function main() {
     );
     console.log('[AuthenticationSampleAgent] Press Ctrl+C to stop the server');
 =======
+=======
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
       `[ExtensionsSampleAgent] Server using new framework started on http://localhost:${PORT}`
     );
     console.log(
       `[ExtensionsSampleAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
     );
     console.log('[ExtensionsSampleAgent] Press Ctrl+C to stop the server');
+<<<<<<< HEAD
 >>>>>>> 5954614 (implementation of authentication sample wip)
+=======
+>>>>>>> 1f0ef00 (implementation of authentication sample wip)
   });
 }
 
