@@ -133,9 +133,15 @@ export class DefaultRequestHandler implements A2ARequestHandler {
 
     // Validate requested extensions against agent capabilities
 <<<<<<< HEAD
+<<<<<<< HEAD
     let newServerCallContext = context;
 =======
 >>>>>>> b72bda5 (fix: Populate the ServerCallContext user param when a new ServerCallContext is created (#200))
+=======
+=======
+    let newServerCallContext = context;
+>>>>>>> f6e2db6 (authentication agent WIP)
+>>>>>>> 5d6508c (authentication agent WIP)
     if (context?.requestedExtensions) {
       const agentCard = await this.getAgentCard();
       const exposedExtensions = new Set(
@@ -147,12 +153,19 @@ export class DefaultRequestHandler implements A2ARequestHandler {
         )
       );
 <<<<<<< HEAD
+<<<<<<< HEAD
       newServerCallContext = new ServerCallContext(validExtensions, context.user);
 =======
       context = new ServerCallContext(validExtensions, context.user);
 >>>>>>> b72bda5 (fix: Populate the ServerCallContext user param when a new ServerCallContext is created (#200))
+=======
+      context = new ServerCallContext(validExtensions, context.user);
+=======
+      newServerCallContext = new ServerCallContext(validExtensions, context.user);
+>>>>>>> f6e2db6 (authentication agent WIP)
+>>>>>>> 5d6508c (authentication agent WIP)
     }
-
+    
     const messageForContext = {
       ...incomingMessage,
       contextId,

@@ -13,6 +13,7 @@ import {
 } from '../../server/index.js';
 import { A2AExpressApp } from '../../server/express/index.js';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { AuthenticationAgentExecutor } from './agent_executor.js';
 import { authenticationHandler } from './authentication_middleware.js';
 import { userBuilder } from './user_builder.js';
@@ -24,7 +25,11 @@ const authenticationAgentCard: AgentCard = {
     'A sample agent to test the stream functionality and simulate the flow of tasks statuses, with support for authentication.',
 =======
 import { SampleAgentExecutor } from '../agents/sample-agent/agent_executor.js';
+=======
+import { SampleAgentExecutor } from './agent_executor.js';
+>>>>>>> 5d6508c (authentication agent WIP)
 import { authenticationHandler } from './authentication_middleware.js';
+import { userBuilder } from './user_builder.js';
 
 
 // --- Server Setup ---
@@ -119,7 +124,7 @@ async function main() {
   // 5. Start the server
 =======
   // 5. Create and setup A2AExpressApp
-  const appBuilder = new A2AExpressApp(requestHandler);
+  const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
   const authenticationMiddleware: RequestHandler = authenticationHandler;
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationMiddleware]);
 

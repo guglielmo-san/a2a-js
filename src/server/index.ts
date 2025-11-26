@@ -35,3 +35,7 @@ export { UnauthenticatedUser } from './authentication/user.js';
 =======
 export type { User, UnauthenticatedUser } from './authentication/user.js';
 >>>>>>> 6fbf682 (feat: support authentication on server side (#195))
+=======
+export type { User } from './authentication/user.js';
+export { UnauthenticatedUser } from './authentication/user.js';
+>>>>>>> f6e2db6 (authentication agent WIP)

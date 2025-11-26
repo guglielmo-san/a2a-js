@@ -41,6 +41,7 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       const user = await options.userBuilder(req);
 =======
       const agentCard = await options.requestHandler.getAgentCard();
@@ -56,6 +57,9 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
 =======
 >>>>>>> 025308d (implementation of authentication sample wip)
 >>>>>>> 5fe98ba (implementation of authentication sample wip)
+=======
+      const user = await options.userBuilder?.(req);
+>>>>>>> f6e2db6 (authentication agent WIP)
       const context = new ServerCallContext(
         getRequestedExtensions(req.header(HTTP_EXTENSION_HEADER)),
         user ?? new UnauthenticatedUser()
