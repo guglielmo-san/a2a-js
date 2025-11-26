@@ -24,6 +24,7 @@ import { A2AExpressApp } from '../../server/express/index.js';
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { AuthenticationAgentExecutor } from './agent_executor.js';
 import { authenticationHandler } from './authentication_middleware.js';
 import { userBuilder } from './user_builder.js';
@@ -58,7 +59,11 @@ const authenticationAgentCard: AgentCard = {
 >>>>>>> 5954614 (implementation of authentication sample wip)
 =======
 import { SampleAgentExecutor } from '../agents/sample-agent/agent_executor.js';
+=======
+import { SampleAgentExecutor } from './agent_executor.js';
+>>>>>>> 2d7da54 (authentication agent WIP)
 import { authenticationHandler } from './authentication_middleware.js';
+import { userBuilder } from './user_builder.js';
 
 
 // --- Server Setup ---
@@ -204,8 +209,12 @@ async function main() {
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
 =======
   // 5. Create and setup A2AExpressApp
+<<<<<<< HEAD
   const appBuilder = new A2AExpressApp(requestHandler);
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
+=======
+  const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
+>>>>>>> 2d7da54 (authentication agent WIP)
   const authenticationMiddleware: RequestHandler = authenticationHandler;
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationMiddleware]);
 
