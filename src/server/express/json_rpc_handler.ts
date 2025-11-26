@@ -42,10 +42,29 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
   router.post('/', async (req: Request, res: Response) => {
     try {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 66fb28e (authentication agent WIP)
       const user = await options.userBuilder(req);
 =======
       const user = await options.userBuilder?.(req);
+<<<<<<< HEAD
 >>>>>>> 9872d93 (feat: support authentication on server side (#195))
+=======
+>>>>>>> 6fbf682 (feat: support authentication on server side (#195))
+=======
+      const user = await options.userBuilder?.(req);
+=======
+>>>>>>> 025308d (implementation of authentication sample wip)
+>>>>>>> 5fe98ba (implementation of authentication sample wip)
+=======
+      const user = await options.userBuilder?.(req);
+>>>>>>> f6e2db6 (authentication agent WIP)
+>>>>>>> 66fb28e (authentication agent WIP)
       const context = new ServerCallContext(
         getRequestedExtensions(req.header(HTTP_EXTENSION_HEADER)),
         user ?? new UnauthenticatedUser()

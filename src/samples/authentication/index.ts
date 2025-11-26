@@ -30,6 +30,9 @@ import { A2AExpressApp } from '../../server/express/index.js';
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 66fb28e (authentication agent WIP)
 import { AuthenticationAgentExecutor } from './agent_executor.js';
 import { authenticationHandler } from './authentication_middleware.js';
 import { userBuilder } from './user_builder.js';
@@ -44,11 +47,17 @@ import { SampleAgentExecutor } from '../agents/sample-agent/agent_executor.js';
 =======
 import { SampleAgentExecutor } from './agent_executor.js';
 >>>>>>> 5d6508c (authentication agent WIP)
+<<<<<<< HEAD
 =======
 import { AuthenticationAgentExecutor } from './agent_executor.js';
 >>>>>>> 460009d (wip authentication sample)
 import { authenticationHandler } from './authentication_middleware.js';
 import { userBuilder } from './user_builder.js';
+=======
+import { authenticationHandler } from './authentication_middleware.js';
+import { userBuilder } from './user_builder.js';
+
+>>>>>>> 66fb28e (authentication agent WIP)
 
 // --- Server Setup ---
 <<<<<<< HEAD
@@ -242,6 +251,7 @@ async function main() {
 =======
   // 5. Create and setup A2AExpressApp
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
+<<<<<<< HEAD
 =======
   // 5. Create and setup A2AExpressApp
 <<<<<<< HEAD
@@ -250,6 +260,8 @@ async function main() {
 =======
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
 >>>>>>> 2d7da54 (authentication agent WIP)
+=======
+>>>>>>> 66fb28e (authentication agent WIP)
   const authenticationMiddleware: RequestHandler = authenticationHandler;
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationMiddleware]);
 

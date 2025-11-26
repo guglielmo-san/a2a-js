@@ -4,10 +4,14 @@ import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 66fb28e (authentication agent WIP)
 import { Message } from '../../index.js';
 =======
 import { Task, TaskStatusUpdateEvent, Message } from '../../index.js';
 >>>>>>> 5d6508c (authentication agent WIP)
+<<<<<<< HEAD
 =======
 import { Message } from '../../index.js';
 >>>>>>> 460009d (wip authentication sample)
@@ -17,6 +21,8 @@ import { Task, TaskStatusUpdateEvent, Message } from '../../index.js';
 =======
 import { Message } from '../../index.js';
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+>>>>>>> 66fb28e (authentication agent WIP)
 import { AgentExecutor, RequestContext, ExecutionEventBus } from '../../server/index.js';
 import { CustomUser } from './user_builder.js';
 
@@ -25,6 +31,9 @@ import { CustomUser } from './user_builder.js';
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 66fb28e (authentication agent WIP)
  * AuthenticationAgentExecutor implements the agent's core logic to support basic authentication operations.
  */
 export class AuthenticationAgentExecutor implements AgentExecutor {
@@ -50,6 +59,7 @@ export class AuthenticationAgentExecutor implements AgentExecutor {
     eventBus.publish(finalMessage);
 =======
  * SampleAgentExecutor implements the agent's core logic.
+<<<<<<< HEAD
 =======
  * AuthenticationAgentExecutor implements the agent's core logic to support basic authentication operations.
 >>>>>>> 460009d (wip authentication sample)
@@ -71,6 +81,13 @@ export class AuthenticationAgentExecutor implements AgentExecutor {
   async execute(requestContext: RequestContext, eventBus: ExecutionEventBus): Promise<void> {
 <<<<<<< HEAD
 >>>>>>> 2d7da54 (authentication agent WIP)
+=======
+ */
+export class SampleAgentExecutor implements AgentExecutor {
+  public cancelTask = async (_taskId: string, _eventBus: ExecutionEventBus): Promise<void> => {};
+
+  async execute(requestContext: RequestContext, eventBus: ExecutionEventBus): Promise<void> {
+>>>>>>> 66fb28e (authentication agent WIP)
       let finalText;
       if (requestContext.context?.user?.isAuthenticated()) {
         const customUser = requestContext.context.user as CustomUser;
@@ -87,6 +104,7 @@ export class AuthenticationAgentExecutor implements AgentExecutor {
       };
       eventBus.publish(finalMessage);
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 5d6508c (authentication agent WIP)
 =======
 =======
@@ -114,5 +132,8 @@ export class AuthenticationAgentExecutor implements AgentExecutor {
 >>>>>>> 2d7da54 (authentication agent WIP)
 =======
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+>>>>>>> 5d6508c (authentication agent WIP)
+>>>>>>> 66fb28e (authentication agent WIP)
   }
 }

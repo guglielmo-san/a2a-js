@@ -135,6 +135,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     let newServerCallContext = context;
 =======
 >>>>>>> b72bda5 (fix: Populate the ServerCallContext user param when a new ServerCallContext is created (#200))
@@ -145,6 +146,9 @@ export class DefaultRequestHandler implements A2ARequestHandler {
 >>>>>>> 5d6508c (authentication agent WIP)
 =======
 >>>>>>> b72bda5 (fix: Populate the ServerCallContext user param when a new ServerCallContext is created (#200))
+=======
+    let newServerCallContext = context;
+>>>>>>> 66fb28e (authentication agent WIP)
     if (context?.requestedExtensions) {
       const agentCard = await this.getAgentCard();
       const exposedExtensions = new Set(
@@ -172,7 +176,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       context = new ServerCallContext(validExtensions, context.user);
 >>>>>>> b72bda5 (fix: Populate the ServerCallContext user param when a new ServerCallContext is created (#200))
     }
-
+    
     const messageForContext = {
       ...incomingMessage,
       contextId,
