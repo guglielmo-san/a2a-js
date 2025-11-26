@@ -15,10 +15,10 @@ import { userBuilder } from './user_builder.js';
 
 // --- Server Setup ---
 
-const extensionAgentCard: AgentCard = {
-  name: 'Sample Agent with timestamp extensions',
+const authenticationAgentCard: AgentCard = {
+  name: 'Sample Agent with authentication support',
   description:
-    'A sample agent to test the stream functionality and simulate the flow of tasks statuses, with extensions integration.',
+    'A sample agent to test the stream functionality and simulate the flow of tasks statuses, with support for authentication.',
   // Adjust the base URL and port as needed. /a2a is the default base in A2AExpressApp
   url: 'http://localhost:41241/',
   provider: {
@@ -37,8 +37,8 @@ const extensionAgentCard: AgentCard = {
   skills: [
     {
       id: 'sample_agent',
-      name: 'Sample Agent with extensions',
-      description: 'Simulate the general flow of a streaming agent with extensions integration.',
+      name: 'Sample Agent with authentication',
+      description: 'Evaluate the user authentication, returning its details.',
       tags: ['sample'],
       examples: ['hi', 'hello world', 'how are you', 'goodbye'],
       inputModes: ['text'], // Explicitly defining for skill
@@ -59,15 +59,14 @@ async function main() {
 
   // 3. Create DefaultRequestHandler
   const requestHandler = new DefaultRequestHandler(
-    extensionAgentCard,
+    authenticationAgentCard,
     taskStore,
     agentExecutor
   );
 
-  // 5. Create and setup A2AExpressApp
+  // 4. Create and setup A2AExpressApp, passing the UserBuilder to the ExpressApp and the AuthenticationMiddleware to the routes.
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
-  const authenticationMiddleware: RequestHandler = authenticationHandler;
-  const expressApp = appBuilder.setupRoutes(express(), '', [authenticationMiddleware]);
+  const expressApp = appBuilder.setupRoutes(express(), '', [authenticationHandler]);
 
   // 6. Start the server
   const PORT = process.env.PORT || 41241;
@@ -76,12 +75,12 @@ async function main() {
       throw err;
     }
     console.log(
-      `[ExtensionsSampleAgent] Server using new framework started on http://localhost:${PORT}`
+      `[AuthenticationSampleAgent] Server using new framework started on http://localhost:${PORT}`
     );
     console.log(
-      `[ExtensionsSampleAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
+      `[AuthenticationSampleAgent] Agent Card: http://localhost:${PORT}/.well-known/agent-card.json`
     );
-    console.log('[ExtensionsSampleAgent] Press Ctrl+C to stop the server');
+    console.log('[AuthenticationSampleAgent] Press Ctrl+C to stop the server');
   });
 }
 
