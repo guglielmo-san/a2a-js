@@ -8,8 +8,9 @@ import {
   DefaultRequestHandler,
 } from '../../server/index.js';
 import { A2AExpressApp } from '../../server/express/index.js';
-import { SampleAgentExecutor } from '../agents/sample-agent/agent_executor.js';
+import { SampleAgentExecutor } from './agent_executor.js';
 import { authenticationHandler } from './authentication_middleware.js';
+import { userBuilder } from './user_builder.js';
 
 
 // --- Server Setup ---
@@ -64,7 +65,7 @@ async function main() {
   );
 
   // 5. Create and setup A2AExpressApp
-  const appBuilder = new A2AExpressApp(requestHandler);
+  const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
   const authenticationMiddleware: RequestHandler = authenticationHandler;
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationMiddleware]);
 
