@@ -2,6 +2,9 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
 import express from 'express';
 =======
 import express, { RequestHandler } from 'express';
@@ -9,12 +12,15 @@ import express, { RequestHandler } from 'express';
 =======
 import express from 'express';
 >>>>>>> 460009d (wip authentication sample)
+<<<<<<< HEAD
 =======
 import express, { RequestHandler } from 'express';
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
 =======
 import express from 'express';
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
 
 import { AgentCard } from '../../index.js';
 import {
@@ -31,8 +37,11 @@ import { A2AExpressApp } from '../../server/express/index.js';
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 66fb28e (authentication agent WIP)
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
 import { AuthenticationAgentExecutor } from './agent_executor.js';
 import { authenticationHandler } from './authentication_middleware.js';
 import { userBuilder } from './user_builder.js';
@@ -48,6 +57,7 @@ import { SampleAgentExecutor } from '../agents/sample-agent/agent_executor.js';
 import { SampleAgentExecutor } from './agent_executor.js';
 >>>>>>> 5d6508c (authentication agent WIP)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 import { AuthenticationAgentExecutor } from './agent_executor.js';
 >>>>>>> 460009d (wip authentication sample)
@@ -59,6 +69,14 @@ import { userBuilder } from './user_builder.js';
 
 >>>>>>> 66fb28e (authentication agent WIP)
 
+=======
+=======
+import { AuthenticationAgentExecutor } from './agent_executor.js';
+>>>>>>> 460009d (wip authentication sample)
+import { authenticationHandler } from './authentication_middleware.js';
+import { userBuilder } from './user_builder.js';
+
+>>>>>>> 1fe5fc0 (wip authentication sample)
 // --- Server Setup ---
 <<<<<<< HEAD
 
@@ -104,6 +122,9 @@ const authenticationAgentCard: AgentCard = {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
   version: '1.0.0',
   protocolVersion: '0.3.0',
   capabilities: {
@@ -140,6 +161,7 @@ const authenticationAgentCard: AgentCard = {
     {
       id: 'sample_agent',
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   version: '1.0.0', // Incremented version
 =======
@@ -156,6 +178,8 @@ const authenticationAgentCard: AgentCard = {
       id: 'sample_agent',
 <<<<<<< HEAD
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
       name: 'Sample Agent with extensions',
       description: 'Simulate the general flow of a streaming agent with extensions integration.',
       tags: ['sample'],
@@ -182,6 +206,7 @@ const authenticationAgentCard: AgentCard = {
   security: [{ Bearer: [] }],
   securitySchemes: { Bearer: { type: 'http', scheme: 'bearer' } },
 >>>>>>> 460009d (wip authentication sample)
+<<<<<<< HEAD
 =======
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
 =======
@@ -197,6 +222,8 @@ const authenticationAgentCard: AgentCard = {
   security: [{ Bearer: [] }],
   securitySchemes: { Bearer: { type: 'http', scheme: 'bearer' } },
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
 };
 
 async function main() {
@@ -208,10 +235,15 @@ async function main() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 460009d (wip authentication sample)
 =======
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+=======
+>>>>>>> 460009d (wip authentication sample)
+>>>>>>> 1fe5fc0 (wip authentication sample)
   const agentExecutor: AgentExecutor = new AuthenticationAgentExecutor();
 
   // 3. Create DefaultRequestHandler
@@ -237,10 +269,15 @@ async function main() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 460009d (wip authentication sample)
 =======
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+=======
+>>>>>>> 460009d (wip authentication sample)
+>>>>>>> 1fe5fc0 (wip authentication sample)
   // 4. Create and setup A2AExpressApp, passing the custom UserBuilder and the AuthenticationMiddleware to the routes.
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationHandler]);
@@ -248,6 +285,9 @@ async function main() {
   // 5. Start the server
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
 =======
   // 5. Create and setup A2AExpressApp
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
@@ -270,10 +310,13 @@ async function main() {
 >>>>>>> 5954614 (implementation of authentication sample wip)
 =======
 >>>>>>> 460009d (wip authentication sample)
+<<<<<<< HEAD
 =======
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
 =======
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
   const PORT = process.env.PORT || 41241;
   expressApp.listen(PORT, (err) => {
     if (err) {

@@ -6,16 +6,22 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
 =======
   "main": "index.js",
 >>>>>>> 5954614 (implementation of authentication sample wip)
 =======
 >>>>>>> 460009d (wip authentication sample)
+<<<<<<< HEAD
 =======
   "main": "index.js",
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
 =======
 >>>>>>> 9427f36 (wip authentication sample)
+=======
+>>>>>>> 1fe5fc0 (wip authentication sample)
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
