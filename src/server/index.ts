@@ -31,6 +31,7 @@ export { InMemoryPushNotificationStore } from './push_notification/push_notifica
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 export type { User } from './authentication/user.js';
 export { UnauthenticatedUser } from './authentication/user.js';
 =======
@@ -43,3 +44,7 @@ export { UnauthenticatedUser } from './authentication/user.js';
 =======
 export type { User, UnauthenticatedUser } from './authentication/user.js';
 >>>>>>> 9872d93 (feat: support authentication on server side (#195))
+=======
+export type { User } from './authentication/user.js';
+export { UnauthenticatedUser } from './authentication/user.js';
+>>>>>>> b72bda5 (fix: Populate the ServerCallContext user param when a new ServerCallContext is created (#200))
