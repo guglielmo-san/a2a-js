@@ -1,4 +1,4 @@
-import express, { RequestHandler } from 'express';
+import express from 'express';
 
 import { AgentCard } from '../../index.js';
 import {
@@ -8,13 +8,11 @@ import {
   DefaultRequestHandler,
 } from '../../server/index.js';
 import { A2AExpressApp } from '../../server/express/index.js';
-import { SampleAgentExecutor } from './agent_executor.js';
+import { AuthenticationAgentExecutor } from './agent_executor.js';
 import { authenticationHandler } from './authentication_middleware.js';
 import { userBuilder } from './user_builder.js';
 
-
 // --- Server Setup ---
-
 const authenticationAgentCard: AgentCard = {
   name: 'Sample Agent with authentication support',
   description:
@@ -25,29 +23,27 @@ const authenticationAgentCard: AgentCard = {
     organization: 'A2A Samples',
     url: 'https://example.com/a2a-samples',
   },
-  version: '1.0.0', // Incremented version
+  version: '1.0.0',
   protocolVersion: '0.3.0',
   capabilities: {
-    streaming: true,
-    pushNotifications: false,
-    stateTransitionHistory: true, // Agent uses history
+    stateTransitionHistory: true,
   },
   defaultInputModes: ['text'],
-  defaultOutputModes: ['text', 'task-status'], // task-status is a common output mode
+  defaultOutputModes: ['text', 'task-status'],
   skills: [
     {
       id: 'sample_agent',
       name: 'Sample Agent with authentication',
       description: 'Evaluate the user authentication, returning its details.',
-      tags: ['sample'],
-      examples: ['hi', 'hello world', 'how are you', 'goodbye'],
-      inputModes: ['text'], // Explicitly defining for skill
-      outputModes: ['text', 'task-status'], // Explicitly defining for skill
+      tags: ['sample', 'authentication'],
+      examples: ['who am i?'],
+      inputModes: ['text'],
+      outputModes: ['text', 'task-status'],
     },
   ],
   supportsAuthenticatedExtendedCard: false,
-  security: [{'Bearer': []}],
-  securitySchemes: { 'Bearer': { type: 'http', scheme: 'bearer' } }
+  security: [{ Bearer: [] }],
+  securitySchemes: { Bearer: { type: 'http', scheme: 'bearer' } },
 };
 
 async function main() {
@@ -55,7 +51,7 @@ async function main() {
   const taskStore: TaskStore = new InMemoryTaskStore();
 
   // 2. Create AgentExecutor
-  const agentExecutor: AgentExecutor = new SampleAgentExecutor();
+  const agentExecutor: AgentExecutor = new AuthenticationAgentExecutor();
 
   // 3. Create DefaultRequestHandler
   const requestHandler = new DefaultRequestHandler(
@@ -64,11 +60,11 @@ async function main() {
     agentExecutor
   );
 
-  // 4. Create and setup A2AExpressApp, passing the UserBuilder to the ExpressApp and the AuthenticationMiddleware to the routes.
+  // 4. Create and setup A2AExpressApp, passing the custom UserBuilder and the AuthenticationMiddleware to the routes.
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationHandler]);
 
-  // 6. Start the server
+  // 5. Start the server
   const PORT = process.env.PORT || 41241;
   expressApp.listen(PORT, (err) => {
     if (err) {

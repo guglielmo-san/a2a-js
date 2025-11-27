@@ -137,7 +137,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       );
       newServerCallContext = new ServerCallContext(validExtensions, context.user);
     }
-    
+
     const messageForContext = {
       ...incomingMessage,
       contextId,
