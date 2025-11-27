@@ -1,0 +1,18 @@
+{
+  "name": "samples",
+  "version": "1.0.0",
+  "description": "Samples for A2A-js protocol",
+  "type": "module",
+  "scripts": {
+    "a2a:cli": "tsx src/samples/cli.ts",
+    "agents:movie-agent": "tsx src/samples/agents/movie-agent/index.ts",
+    "agents:sample-agent": "tsx src/samples/agents/sample-agent/index.ts",
+    "agents:extension-agent": "tsx src/samples/extensions/index.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@genkit-ai/googleai": "^1.24.0",
+    "genkit": "^1.24.0"
+  }
+}
