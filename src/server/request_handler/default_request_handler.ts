@@ -172,7 +172,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       context = new ServerCallContext(validExtensions, context.user);
 >>>>>>> b72bda5 (fix: Populate the ServerCallContext user param when a new ServerCallContext is created (#200))
     }
-    
+
     const messageForContext = {
       ...incomingMessage,
       contextId,

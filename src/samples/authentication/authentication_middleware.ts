@@ -9,6 +9,7 @@ passport.use(
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       secretOrKey: 'a2a-secret-for-authentication-sample',
 =======
       secretOrKey: 'A2A-SecurityKey',
@@ -19,6 +20,9 @@ passport.use(
 =======
       secretOrKey: 'A2A-SecurityKey',
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
+=======
+      secretOrKey: 'a2a-secret-for-authentication-sample',
+>>>>>>> 9427f36 (wip authentication sample)
     },
     (jwt_payload, done) => {
       return done(null, jwt_payload);
@@ -34,8 +38,11 @@ export const authenticationHandler: RequestHandler = (
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 460009d (wip authentication sample)
+=======
+>>>>>>> 9427f36 (wip authentication sample)
   passport.authenticate('jwt', { session: false }, (err: any, user: any, _info: any) => {
     if (err) {
       return next(err);
@@ -45,6 +52,7 @@ export const authenticationHandler: RequestHandler = (
     }
     next();
   })(req, res, next);
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 =======
@@ -64,4 +72,6 @@ export const authenticationHandler: RequestHandler = (
 >>>>>>> 460009d (wip authentication sample)
 =======
 >>>>>>> 1f0ef00 (implementation of authentication sample wip)
+=======
+>>>>>>> 9427f36 (wip authentication sample)
 };
