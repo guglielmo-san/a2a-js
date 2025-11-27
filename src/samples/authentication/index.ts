@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import express from 'express';
 =======
 import express, { RequestHandler } from 'express';
 >>>>>>> 5954614 (implementation of authentication sample wip)
+=======
+import express from 'express';
+>>>>>>> 460009d (wip authentication sample)
 
 import { AgentCard } from '../../index.js';
 import {
@@ -12,6 +16,7 @@ import {
   DefaultRequestHandler,
 } from '../../server/index.js';
 import { A2AExpressApp } from '../../server/express/index.js';
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 import { AuthenticationAgentExecutor } from './agent_executor.js';
@@ -28,14 +33,21 @@ import { SampleAgentExecutor } from '../agents/sample-agent/agent_executor.js';
 =======
 import { SampleAgentExecutor } from './agent_executor.js';
 >>>>>>> 5d6508c (authentication agent WIP)
+=======
+import { AuthenticationAgentExecutor } from './agent_executor.js';
+>>>>>>> 460009d (wip authentication sample)
 import { authenticationHandler } from './authentication_middleware.js';
 import { userBuilder } from './user_builder.js';
 
-
 // --- Server Setup ---
+<<<<<<< HEAD
 
 const extensionAgentCard: AgentCard = {
   name: 'Sample Agent with timestamp extensions',
+=======
+const authenticationAgentCard: AgentCard = {
+  name: 'Sample Agent with authentication support',
+>>>>>>> 460009d (wip authentication sample)
   description:
     'A sample agent to test the stream functionality and simulate the flow of tasks statuses, with extensions integration.',
 >>>>>>> 5954614 (implementation of authentication sample wip)
@@ -45,6 +57,7 @@ const extensionAgentCard: AgentCard = {
     organization: 'A2A Samples',
     url: 'https://example.com/a2a-samples',
   },
+<<<<<<< HEAD
 <<<<<<< HEAD
   version: '1.0.0',
   protocolVersion: '0.3.0',
@@ -69,17 +82,19 @@ const extensionAgentCard: AgentCard = {
   securitySchemes: { Bearer: { type: 'http', scheme: 'bearer' } },
 =======
   version: '1.0.0', // Incremented version
+=======
+  version: '1.0.0',
+>>>>>>> 460009d (wip authentication sample)
   protocolVersion: '0.3.0',
   capabilities: {
-    streaming: true,
-    pushNotifications: false,
-    stateTransitionHistory: true, // Agent uses history
+    stateTransitionHistory: true,
   },
   defaultInputModes: ['text'],
-  defaultOutputModes: ['text', 'task-status'], // task-status is a common output mode
+  defaultOutputModes: ['text', 'task-status'],
   skills: [
     {
       id: 'sample_agent',
+<<<<<<< HEAD
       name: 'Sample Agent with extensions',
       description: 'Simulate the general flow of a streaming agent with extensions integration.',
       tags: ['sample'],
@@ -92,6 +107,19 @@ const extensionAgentCard: AgentCard = {
   security: [{'Bearer': []}],
   securitySchemes: { 'Bearer': { type: 'http', scheme: 'bearer' } }
 >>>>>>> 5954614 (implementation of authentication sample wip)
+=======
+      name: 'Sample Agent with authentication',
+      description: 'Evaluate the user authentication, returning its details.',
+      tags: ['sample', 'authentication'],
+      examples: ['who am i?'],
+      inputModes: ['text'],
+      outputModes: ['text', 'task-status'],
+    },
+  ],
+  supportsAuthenticatedExtendedCard: false,
+  security: [{ Bearer: [] }],
+  securitySchemes: { Bearer: { type: 'http', scheme: 'bearer' } },
+>>>>>>> 460009d (wip authentication sample)
 };
 
 async function main() {
@@ -100,6 +128,9 @@ async function main() {
 
   // 2. Create AgentExecutor
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 460009d (wip authentication sample)
   const agentExecutor: AgentExecutor = new AuthenticationAgentExecutor();
 
   // 3. Create DefaultRequestHandler
@@ -117,11 +148,15 @@ async function main() {
   );
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 460009d (wip authentication sample)
   // 4. Create and setup A2AExpressApp, passing the custom UserBuilder and the AuthenticationMiddleware to the routes.
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
   const expressApp = appBuilder.setupRoutes(express(), '', [authenticationHandler]);
 
   // 5. Start the server
+<<<<<<< HEAD
 =======
   // 5. Create and setup A2AExpressApp
   const appBuilder = new A2AExpressApp(requestHandler, userBuilder);
@@ -130,6 +165,8 @@ async function main() {
 
   // 6. Start the server
 >>>>>>> 5954614 (implementation of authentication sample wip)
+=======
+>>>>>>> 460009d (wip authentication sample)
   const PORT = process.env.PORT || 41241;
   expressApp.listen(PORT, (err) => {
     if (err) {

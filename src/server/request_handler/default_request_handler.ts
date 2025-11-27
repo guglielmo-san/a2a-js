@@ -165,7 +165,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
 >>>>>>> f6e2db6 (authentication agent WIP)
 >>>>>>> 5d6508c (authentication agent WIP)
     }
-    
+
     const messageForContext = {
       ...incomingMessage,
       contextId,
