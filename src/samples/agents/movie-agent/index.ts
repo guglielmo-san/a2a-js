@@ -247,6 +247,7 @@ class MovieAgentExecutor implements AgentExecutor {
 const movieAgentCard: AgentCard = {
   name: 'Movie Agent',
   description: 'An agent that can answer questions about movies and actors using TMDB.',
+  protocolVersion: '1.0.0',
   // Adjust the base URL and port as needed. /a2a is the default base in A2AExpressApp
   url: 'http://localhost:41241/', // Example: if baseUrl in A2AExpressApp
   provider: {
