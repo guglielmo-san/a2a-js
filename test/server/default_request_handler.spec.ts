@@ -12,6 +12,7 @@ import {
   InMemoryPushNotificationStore,
   RequestContext,
   ExecutionEventBus,
+  UnauthenticatedUser,
   ExtendedAgentCardProvider,
   User,
 } from '../../src/server/index.js';
@@ -1713,7 +1714,10 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
     await mockTaskStore.save(fakeTask);
     await handler.sendMessage(
       params,
-      new ServerCallContext(new Set([expectedExtension, 'not-available-extension-by-agent-card']))
+      new ServerCallContext(
+        new Set([expectedExtension, 'not-available-extension-by-agent-card']),
+        new UnauthenticatedUser()
+      )
     );
 
     expect(capturedRequestContext).to.be.instanceOf(
@@ -1730,6 +1734,7 @@ describe('DefaultRequestHandler as A2ARequestHandler', () => {
       new Set([expectedExtension]),
       'requestedExtensions should contain the expected extension'
     );
+    expect(capturedRequestContext?.context?.user).to.be.an.instanceOf(UnauthenticatedUser);
   });
 
   describe('getAuthenticatedExtendedAgentCard tests', async () => {
