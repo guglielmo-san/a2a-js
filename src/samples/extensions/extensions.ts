@@ -1,4 +1,3 @@
-import { A2AClient } from '../../client/client.js';
 import {
   AgentExecutor,
   RequestContext,
