@@ -3,6 +3,7 @@
   "version": "0.3.5",
   "description": "Samples for @a2a-js/sdk",
   "type": "module",
+  "private": true,
   "scripts": {
     "a2a:cli": "tsx cli.ts",
     "agents:movie-agent": "tsx agents/movie-agent/index.ts",
@@ -10,9 +11,13 @@
     "agents:extension-agent": "tsx extensions/index.ts"
   },
   "devDependencies": {
-    "@genkit-ai/googleai": "^1.24.0",
+    "@genkit-ai/googleai": "^1.8.0",
     "@types/express": "^5.0.5",
     "express": "^5.1.0",
-    "genkit": "^1.24.0"
+    "genkit": "^1.8.0",
+    "tsx": "^4.19.3"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
   }
 }
