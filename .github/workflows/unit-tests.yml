@@ -21,5 +21,10 @@ jobs:
         node-version: 18
         registry-url: 'https://registry.npmjs.org'
         cache: 'npm'
-    - run: npm ci
-    - run: npm test
+    - name: Run tests with coverage
+      run: |
+        npm ci
+        npm run coverage
+    - name: Check coverage thresholds
+      run: |
+        npm run coverage:check || echo "::warning title=Coverage Thresholds::Some files are below 60% coverage. Check logs for details."
