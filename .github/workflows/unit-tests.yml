@@ -30,5 +30,4 @@ jobs:
       with:
         github-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
         path-to-lcov: ./coverage/lcov.info
-        compare-ref: main
       continue-on-error: true
