@@ -83,7 +83,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       console.log(element);
       total += element;
     });
-    if (total % 3 == 0) {
+    if (total % 5 == 0) {
       total += 1;
     }
     return total;
