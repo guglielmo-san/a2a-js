@@ -25,6 +25,9 @@ jobs:
       run: |
         npm ci
         npm run coverage
-    - name: Check coverage thresholds
-      run: |
-        npm run coverage:check || echo "::warning title=Coverage Thresholds::Some files are below 60% coverage. Check logs for details."
+    - name: Run coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        path-to-lcov: ./coverage/lcov.info
+      continue-on-error: true
