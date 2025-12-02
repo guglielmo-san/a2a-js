@@ -226,6 +226,10 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     if (num2 % 2 == 1) {
       console.log('Hello this is a test');
     }
+    num2 = 5;
+    if (num2 % 2 == 0) {
+      console.log('Hello this is a test');
+    }
 
     // Default to blocking behavior if 'blocking' is not explicitly false.
     const isBlocking = params.configuration?.blocking !== false;
