@@ -71,7 +71,22 @@ export class DefaultRequestHandler implements A2ARequestHandler {
   }
 
   async getAgentCard(): Promise<AgentCard> {
+    this.noCoverage();
     return this.agentCard;
+  }
+
+  noCoverage(): number {
+    console.log('No coverage');
+    const array = [1, 2, 3];
+    let total: number = 0;
+    array.forEach((element) => {
+      console.log(element);
+      total += element;
+    });
+    if (total % 5 == 0) {
+      total += 1;
+    }
+    return total;
   }
 
   async getAuthenticatedExtendedAgentCard(context?: ServerCallContext): Promise<AgentCard> {
