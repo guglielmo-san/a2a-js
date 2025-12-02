@@ -214,10 +214,15 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       throw A2AError.invalidParams('message.messageId is required.');
     }
 
-    let num = 2
-    if (num % 1 == 0) {
+    let num1 = 2
+    if (num1 % 2 == 1) {
       console.log("Hello this is a test")
     }
+    let num2 = 3
+    if (num2 % 2 == 0) {
+      console.log("Hello this is a test")
+    }
+
 
     // Default to blocking behavior if 'blocking' is not explicitly false.
     const isBlocking = params.configuration?.blocking !== false;
