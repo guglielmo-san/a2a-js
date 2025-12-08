@@ -14,6 +14,8 @@ import {
 } from '../../types.js';
 import { ServerCallContext } from '../context.js';
 
+export type A2AStreamEventData = Message | Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent;
+
 export interface A2ARequestHandler {
   getAgentCard(): Promise<AgentCard>;
 
