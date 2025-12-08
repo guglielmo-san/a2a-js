@@ -7,12 +7,20 @@ export interface HandlerInterceptor {
   /**
    * Invoked before transport method.
    */
-  before(args: BeforeArgs): Promise<ServerCallResult | void>;
+  before(args: BeforeArgs): Promise<EarlyReturnBefore>;
 
   /**
    * Invoked after transport method.
    */
-  after(args: AfterArgs): Promise<boolean | void>;
+  after(args: AfterArgs): Promise<EarlyReturnAfter>;
+}
+
+export interface EarlyReturnBefore<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
+  earlyReturn?: ServerCallResult<K>
+}
+
+export interface EarlyReturnAfter {
+  earlyReturn?: boolean
 }
 
 export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
@@ -103,5 +111,5 @@ interface ResultsOverrides {
   // sendMessageStream and resubscribeTask return async iterators and are intercepted on each item,
   // which requires custom handling.
   sendMessageStream: A2AStreamEventData;
-  resubscribeTask: A2AStreamEventData;
+  resubscribe: A2AStreamEventData;
 }

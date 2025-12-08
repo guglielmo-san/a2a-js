@@ -46,8 +46,6 @@ export class DefaultRequestHandler implements A2ARequestHandler {
   private readonly pushNotificationStore?: PushNotificationStore;
   private readonly pushNotificationSender?: PushNotificationSender;
   private readonly extendedAgentCardProvider?: AgentCard | ExtendedAgentCardProvider;
-  private readonly handlerInterceptors?: HandlerInterceptor[];
-
 
   constructor(
     agentCard: AgentCard,
@@ -57,14 +55,12 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     pushNotificationStore?: PushNotificationStore,
     pushNotificationSender?: PushNotificationSender,
     extendedAgentCardProvider?: AgentCard | ExtendedAgentCardProvider,
-    handlerInterceptors?: HandlerInterceptor[]
   ) {
     this.agentCard = agentCard;
     this.taskStore = taskStore;
     this.agentExecutor = agentExecutor;
     this.eventBusManager = eventBusManager;
     this.extendedAgentCardProvider = extendedAgentCardProvider;
-    this.handlerInterceptors = handlerInterceptors;
 
     // If push notifications are supported, use the provided store and sender.
     // Otherwise, use the default in-memory store and sender.
@@ -683,35 +679,6 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       }
     } else {
       console.error(`Event processing loop failed for task ${taskId}: ${errorMessage}`);
-    }
-  }
-
-  private async interceptBefore<K extends keyof A2ARequestHandler>(
-    args: BeforeArgs<K>): Promise<ServerCallResult<K> | undefined> {
-    const executedInterceptors: HandlerInterceptor[] = [];
-    let result: ServerCallResult | void;
-    for (const interceptor of this.handlerInterceptors || []) {
-      executedInterceptors.push(interceptor);
-      result = await interceptor.before(args);
-      break;
-    }
-    if (result) {
-      if (result.method !== args.input.method) {
-        throw A2AError.internalError(
-          `Interceptor returned result for method '${result.method}' but expected '${args.input.method}'.`
-        );
-      }
-      this.interceptAfter({result, context: args.context}, executedInterceptors)
-      return result as ServerCallResult<K>;
-    }
-  }
-
-  private interceptAfter<K extends keyof A2ARequestHandler>(args: AfterArgs<K>, interceptors?: HandlerInterceptor[]): Promise<void> {
-    for (const interceptor of interceptors || this.handlerInterceptors || []) {
-      const earlyReturn = interceptor.after(args);
-      if (earlyReturn) {
-        return;
-      }
     }
   }
 }

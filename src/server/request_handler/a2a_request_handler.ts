@@ -58,5 +58,5 @@ export interface A2ARequestHandler {
   resubscribe(
     params: TaskIdParams,
     context?: ServerCallContext
-  ): AsyncGenerator<Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent, void, undefined>;
+  ): AsyncGenerator<Message | Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent, void, undefined>;
 }

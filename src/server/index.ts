@@ -13,7 +13,7 @@ export { DefaultExecutionEventBusManager } from './events/execution_event_bus_ma
 export { ExecutionEventQueue } from './events/execution_event_queue.js';
 
 export type { A2ARequestHandler } from './request_handler/a2a_request_handler.js';
-export { DefaultRequestHandler } from './request_handler/default_request_handler.js';
+export { RequestHandlerInterceptor as DefaultRequestHandler } from './request_handler/request_handler_interceptor.js';
 export type { ExtendedAgentCardProvider } from './request_handler/default_request_handler.js';
 export { ResultManager } from './result_manager.js';
 export type { TaskStore } from './store.js';
