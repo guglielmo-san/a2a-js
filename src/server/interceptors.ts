@@ -7,20 +7,20 @@ export interface HandlerInterceptor {
   /**
    * Invoked before transport method.
    */
-  before(args: BeforeArgs): Promise<EarlyReturnBefore>;
+  before(args: BeforeArgs): Promise<EarlyReturnBefore | void>;
 
   /**
    * Invoked after transport method.
    */
-  after(args: AfterArgs): Promise<EarlyReturnAfter>;
+  after(args: AfterArgs): Promise<EarlyReturnAfter | void>;
 }
 
 export interface EarlyReturnBefore<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
-  earlyReturn?: ServerCallResult<K>
+  value: ServerCallResult<K>
 }
 
 export interface EarlyReturnAfter {
-  earlyReturn?: boolean
+  value: boolean
 }
 
 export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {

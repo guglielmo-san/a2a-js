@@ -401,29 +401,30 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
   private async interceptBefore<K extends keyof A2ARequestHandler>(
     args: BeforeArgs<K>): Promise<ServerCallResult<K> | undefined> {
     const executedInterceptors: HandlerInterceptor[] = [];
-    let beforeResult: EarlyReturnBefore;
+    let earlyReturn: EarlyReturnBefore;
     for (const interceptor of this.handlerInterceptors || []) {
       executedInterceptors.push(interceptor);
-      beforeResult = await interceptor.before(args);
-      if (beforeResult?.earlyReturn) {
+      const result = await interceptor.before(args);
+      if (result) {
+        earlyReturn = result;
         break;
       }
     }
-    if (beforeResult?.earlyReturn) {
-      if (beforeResult.earlyReturn.method !== args.input.method) {
+    if (earlyReturn) {
+      if (earlyReturn.value.method !== args.input.method) {
         throw A2AError.internalError(
-          `Interceptor returned result for method '${beforeResult.earlyReturn.method}' but expected '${args.input.method}'.`
+          `Interceptor returned result for method '${earlyReturn.value.method}' but expected '${args.input.method}'.`
         );
       }
-      this.interceptAfter({result: beforeResult.earlyReturn, context: args.context}, executedInterceptors)
-      return beforeResult.earlyReturn as ServerCallResult<K>;
+      this.interceptAfter({result: earlyReturn.value, context: args.context}, executedInterceptors)
+      return earlyReturn.value as ServerCallResult<K>;
     }
   }
 
   private async interceptAfter<K extends keyof A2ARequestHandler>(args: AfterArgs<K>, interceptors?: HandlerInterceptor[]): Promise<void> {
     for (const interceptor of interceptors || this.handlerInterceptors || []) {
       const earlyReturn = await interceptor.after(args);
-      if (earlyReturn.earlyReturn) {
+      if (earlyReturn && earlyReturn.value) {
         return;
       }
     }
