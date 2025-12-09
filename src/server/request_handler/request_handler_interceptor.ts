@@ -107,7 +107,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
-      this.interceptAfter(afterArgs, beforeResult.executed);
+      await this.interceptAfter(afterArgs, beforeResult.executed);
       yield afterArgs.result.value;
       return;
     }
@@ -124,7 +124,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
-      this.interceptAfter(afterArgs);
+      await this.interceptAfter(afterArgs);
       yield afterArgs.result.value;
       return;
     }
