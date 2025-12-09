@@ -31,3 +31,11 @@ export { InMemoryPushNotificationStore } from './push_notification/push_notifica
 
 export type { User } from './authentication/user.js';
 export { UnauthenticatedUser } from './authentication/user.js';
+
+export {
+  HandlerInterceptor,
+  BeforeArgs,
+  AfterArgs,
+  HandlerCallInput,
+  HandlerCallResult,
+} from './interceptors.js';

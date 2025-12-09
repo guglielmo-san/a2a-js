@@ -5,12 +5,12 @@ import { AgentCard } from '../types.js';
 
 export interface HandlerInterceptor {
   /**
-   * Invoked before transport method.
+   * Invoked before handler method.
    */
   before(args: BeforeArgs): Promise<EarlyReturnBefore | void>;
 
   /**
-   * Invoked after transport method.
+   * Invoked after handler method.
    */
   after(args: AfterArgs): Promise<EarlyReturnAfter | void>;
 }
@@ -33,7 +33,7 @@ export interface EarlyReturnAfter {
 
 export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
   /**
-   * Identifies the Server method invoked and its payload.
+   * Identifies the Handler method invoked and its payload.
    * Payload inside the input object can be modified.
    */
   readonly input: HandlerCallInput<K>;
@@ -51,7 +51,7 @@ export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequest
 
 export interface AfterArgs<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
   /**
-   * Identifies the Server method invoked and its result.
+   * Identifies the Handler method invoked and its result.
    * Payload inside the result object can be modified.
    */
   readonly result: HandlerCallResult<K>;
@@ -73,7 +73,7 @@ export type HandlerCallResult<K extends keyof A2ARequestHandler = keyof A2AReque
   MethodResult<A2ARequestHandler, K, ResultsOverrides>;
 
 // Types below are helper types and are not exported to allow simplifying it without affecting
-// public API if necessary. They are exported via type aliases ServerXxx which can be replaced with explicit union if necessary.
+// public API if necessary. They are exported via type aliases HandlerXxx which can be replaced with explicit union if necessary.
 
 /**
  * For

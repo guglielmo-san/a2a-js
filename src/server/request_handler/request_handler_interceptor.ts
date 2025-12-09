@@ -317,7 +317,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
   private async interceptAfter<K extends keyof A2ARequestHandler>(
     args: AfterArgs<K>,
     interceptors?: HandlerInterceptor[]
-  ): Promise<{ earlyReturn: boolean }> | undefined {
+  ): Promise<{ earlyReturn: boolean } | undefined> {
     const reversedInterceptors = [...(interceptors || this.handlerInterceptors || [])].reverse();
     for (const interceptor of reversedInterceptors) {
       const earlyReturn = await interceptor.after(args);
