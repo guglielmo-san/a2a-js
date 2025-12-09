@@ -17,7 +17,6 @@ import {
 } from '../../src/types.js';
 import { AgentExecutor } from '../../src/server/agent_execution/agent_executor.js';
 import { TaskStore } from '../../src/server/store.js';
-import { ExecutionEventBusManager } from '../../src/server/events/execution_event_bus_manager.js';
 import {
   A2ARequestHandler,
   A2AStreamEventData,
@@ -355,10 +354,12 @@ describe('RequestHandlerInterceptor', () => {
       };
       const interceptors = [
         {
-          before: async (args: any) => {
-            args.earlyReturn = {
-              method: 'getTask',
-              value: task,
+          before: async (): Promise<any> => {
+            return {
+              value: {
+                method: 'getTask',
+                value: task,
+              },
             };
           },
           after: async () => {},
@@ -404,15 +405,17 @@ describe('RequestHandlerInterceptor', () => {
         {
           before: async () => {},
           after: async (args: any) => {
-            args.earlyReturn = true;
+            if (args.result.method === 'getTask') {
+              args.result.value = { ...args.result.value, metadata: { foo: 'bar' } };
+            }
           },
         },
         {
           before: async () => {},
-          after: async (args: any) => {
-            if (args.result.method === 'getTask') {
-              args.result.value = { ...args.result.value, metadata: { foo: 'bar' } };
-            }
+          after: async (): Promise<any> => {
+            return {
+              value: true,
+            };
           },
         },
       ];
@@ -455,11 +458,13 @@ describe('RequestHandlerInterceptor', () => {
           },
         },
         {
-          before: async (args: any) => {
+          before: async (args: any): Promise<any> => {
             if (args.input.method === 'getTask') {
-              args.earlyReturn = {
-                method: 'getTask',
-                value: task,
+              return {
+                value: {
+                  method: 'getTask',
+                  value: task,
+                },
               };
             }
           },
@@ -651,11 +656,13 @@ describe('RequestHandlerInterceptor', () => {
               },
             },
             {
-              before: async (args: any) => {
+              before: async (args: any): Promise<any> => {
                 if (args.input.method === test.name) {
-                  args.earlyReturn = {
-                    method: args.input.method,
-                    value: events[0],
+                  return {
+                    value: {
+                      method: args.input.method,
+                      value: events[0],
+                    },
                   };
                 }
               },
@@ -720,11 +727,11 @@ describe('RequestHandlerInterceptor', () => {
           const interceptors = [
             {
               before: async () => {},
-              after: async (args: any) => {
+              after: async (args: any): Promise<any> => {
                 if (args.result.method === test.name) {
                   const event = args.result.value as A2AStreamEventData;
                   if (event.kind === 'status-update' && event.status.state === 'working') {
-                    args.earlyReturn = true;
+                    return { value: true };
                   }
                 }
               },

@@ -107,7 +107,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
-      this.interceptAfter(afterArgs);
+      this.interceptAfter(afterArgs, beforeResult.executed);
       yield afterArgs.result.value;
       return;
     }
@@ -141,8 +141,11 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
-      this.interceptAfter(afterArgs);
+      const afterResult = await this.interceptAfter(afterArgs);
       yield afterArgs.result.value;
+      if (afterResult?.earlyReturn) {
+        return;
+      }
     }
   }
 
@@ -220,30 +223,33 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
     };
     const beforeResult = await this.interceptBefore(beforeArgs);
     if (beforeResult) {
-      const afterArgs: AfterArgs<'sendMessageStream'> = {
+      const afterArgs: AfterArgs<'resubscribe'> = {
         result: {
-          method: 'sendMessageStream',
+          method: 'resubscribe',
           value: beforeResult.earlyReturn.value,
         },
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
-      this.interceptAfter(afterArgs, beforeResult.executed);
+      await this.interceptAfter(afterArgs, beforeResult.executed);
       yield afterArgs.result.value;
       return;
     }
 
     for await (const result of this.requestHandler.resubscribe(beforeArgs.input.value, context)) {
-      const afterArgs: AfterArgs<'sendMessageStream'> = {
+      const afterArgs: AfterArgs<'resubscribe'> = {
         result: {
-          method: 'sendMessageStream',
+          method: 'resubscribe',
           value: result,
         },
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
-      this.interceptAfter(afterArgs);
+      const afterResult = await this.interceptAfter(afterArgs);
       yield afterArgs.result.value;
+      if (afterResult?.earlyReturn) {
+        return;
+      }
     }
   }
 
@@ -311,12 +317,12 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
   private async interceptAfter<K extends keyof A2ARequestHandler>(
     args: AfterArgs<K>,
     interceptors?: HandlerInterceptor[]
-  ): Promise<void> {
+  ): Promise<{ earlyReturn: boolean }> | undefined {
     const reversedInterceptors = [...(interceptors || this.handlerInterceptors || [])].reverse();
     for (const interceptor of reversedInterceptors) {
       const earlyReturn = await interceptor.after(args);
       if (earlyReturn && earlyReturn.value) {
-        return;
+        return { earlyReturn: earlyReturn.value };
       }
     }
   }
