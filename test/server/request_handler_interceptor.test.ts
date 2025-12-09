@@ -22,6 +22,7 @@ import {
   A2ARequestHandler,
   A2AStreamEventData,
 } from '../../src/server/request_handler/a2a_request_handler.js';
+import { HandlerInterceptor } from '../../src/server/interceptors.js';
 
 describe('RequestHandlerInterceptor', () => {
   let defaultRequestHandler: sinon.SinonStubbedInstance<A2ARequestHandler>;
@@ -29,7 +30,6 @@ describe('RequestHandlerInterceptor', () => {
   let agentCard: AgentCard;
   let taskStore: TaskStore;
   let agentExecutor: AgentExecutor;
-  let eventBusManager: ExecutionEventBusManager;
 
   beforeEach(() => {
     agentCard = {
@@ -48,7 +48,6 @@ describe('RequestHandlerInterceptor', () => {
     };
     taskStore = {} as any;
     agentExecutor = {} as any;
-    eventBusManager = {} as any;
 
     defaultRequestHandler = {
       getAgentCard: sinon.stub(),
@@ -64,12 +63,7 @@ describe('RequestHandlerInterceptor', () => {
       resubscribe: sinon.stub(),
     };
 
-    interceptor = new RequestHandlerInterceptor(
-      agentCard,
-      taskStore,
-      agentExecutor,
-      eventBusManager
-    );
+    interceptor = new RequestHandlerInterceptor(agentCard, taskStore, agentExecutor);
     (interceptor as any).requestHandler = defaultRequestHandler;
   });
 
@@ -268,5 +262,496 @@ describe('RequestHandlerInterceptor', () => {
     }
     expect(defaultRequestHandler.resubscribe.calledOnceWith(params)).to.be.true;
     expect(got).to.deep.equal(events);
+  });
+
+  describe('Interceptors', () => {
+    it('should modify request', async () => {
+      const interceptors = [
+        {
+          before: async (args: any) => {
+            if (args.input.method === 'getTask') {
+              args.input.value = { ...args.input.value, metadata: { foo: 'bar' } };
+            }
+          },
+          after: async () => {},
+        },
+      ];
+      interceptor = new RequestHandlerInterceptor(
+        agentCard,
+        taskStore,
+        agentExecutor,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        interceptors as HandlerInterceptor[]
+      );
+      (interceptor as any).requestHandler = defaultRequestHandler;
+
+      const params: TaskQueryParams = { id: '123' };
+      const task: Task = {
+        id: '123',
+        kind: 'task',
+        contextId: 'ctx1',
+        status: { state: 'working' },
+      };
+      defaultRequestHandler.getTask.resolves(task);
+
+      const result = await interceptor.getTask(params);
+
+      expect(
+        defaultRequestHandler.getTask.calledOnceWith({
+          id: '123',
+          metadata: { foo: 'bar' },
+        } as TaskQueryParams)
+      ).to.be.true;
+      expect(result).to.equal(task);
+    });
+
+    it('should modify response', async () => {
+      const interceptors = [
+        {
+          before: async () => {},
+          after: async (args: any) => {
+            if (args.result.method === 'getTask') {
+              args.result.value = { ...args.result.value, metadata: { foo: 'bar' } };
+            }
+          },
+        },
+      ];
+      interceptor = new RequestHandlerInterceptor(
+        agentCard,
+        taskStore,
+        agentExecutor,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        interceptors as HandlerInterceptor[]
+      );
+      (interceptor as any).requestHandler = defaultRequestHandler;
+
+      const params: TaskQueryParams = { id: '123' };
+      const task: Task = {
+        id: '123',
+        kind: 'task',
+        contextId: 'ctx1',
+        status: { state: 'working' },
+      };
+      defaultRequestHandler.getTask.resolves(task);
+
+      const result = await interceptor.getTask(params);
+
+      expect(defaultRequestHandler.getTask.calledOnceWith(params)).to.be.true;
+      expect(result).to.deep.equal({ ...task, metadata: { foo: 'bar' } });
+    });
+
+    it('should return early from before', async () => {
+      const task: Task = {
+        id: '123',
+        kind: 'task',
+        contextId: 'ctx1',
+        status: { state: 'working' },
+      };
+      const interceptors = [
+        {
+          before: async (args: any) => {
+            args.earlyReturn = {
+              method: 'getTask',
+              value: task,
+            };
+          },
+          after: async () => {},
+        },
+        {
+          before: async (args: any) => {
+            if (args.input.method === 'getTask') {
+              args.input.value = { ...args.input.value, metadata: { foo: 'bar' } };
+            }
+          },
+          after: async () => {},
+        },
+      ];
+      interceptor = new RequestHandlerInterceptor(
+        agentCard,
+        taskStore,
+        agentExecutor,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        interceptors as HandlerInterceptor[]
+      );
+      (interceptor as any).requestHandler = defaultRequestHandler;
+
+      const params: TaskQueryParams = { id: '123' };
+      defaultRequestHandler.getTask.resolves(task);
+
+      const result = await interceptor.getTask(params);
+
+      expect(defaultRequestHandler.getTask.notCalled).to.be.true;
+      expect(result).to.equal(task);
+    });
+
+    it('should return early from after', async () => {
+      const task: Task = {
+        id: '123',
+        kind: 'task',
+        contextId: 'ctx1',
+        status: { state: 'working' },
+      };
+      const interceptors = [
+        {
+          before: async () => {},
+          after: async (args: any) => {
+            args.earlyReturn = true;
+          },
+        },
+        {
+          before: async () => {},
+          after: async (args: any) => {
+            if (args.result.method === 'getTask') {
+              args.result.value = { ...args.result.value, metadata: { foo: 'bar' } };
+            }
+          },
+        },
+      ];
+      interceptor = new RequestHandlerInterceptor(
+        agentCard,
+        taskStore,
+        agentExecutor,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        interceptors as HandlerInterceptor[]
+      );
+      (interceptor as any).requestHandler = defaultRequestHandler;
+
+      const params: TaskQueryParams = { id: '123' };
+      defaultRequestHandler.getTask.resolves(task);
+
+      const result = await interceptor.getTask(params);
+
+      expect(defaultRequestHandler.getTask.calledOnceWith(params)).to.be.true;
+      expect(result).to.equal(task);
+    });
+
+    it('should run after for interceptors executed in before for early return', async () => {
+      const task: Task = {
+        id: '123',
+        kind: 'task',
+        contextId: 'ctx1',
+        status: { state: 'working' },
+      };
+      let firstAfterCalled = false;
+      let secondAfterCalled = false;
+      let thirdAfterCalled = false;
+      const interceptors = [
+        {
+          before: async () => {},
+          after: async () => {
+            firstAfterCalled = true;
+          },
+        },
+        {
+          before: async (args: any) => {
+            if (args.input.method === 'getTask') {
+              args.earlyReturn = {
+                method: 'getTask',
+                value: task,
+              };
+            }
+          },
+          after: async () => {
+            secondAfterCalled = true;
+          },
+        },
+        {
+          before: async () => {},
+          after: async () => {
+            thirdAfterCalled = true;
+          },
+        },
+      ];
+      interceptor = new RequestHandlerInterceptor(
+        agentCard,
+        taskStore,
+        agentExecutor,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        interceptors as HandlerInterceptor[]
+      );
+      (interceptor as any).requestHandler = defaultRequestHandler;
+
+      const params: TaskQueryParams = { id: '123' };
+      defaultRequestHandler.getTask.resolves(task);
+
+      const result = await interceptor.getTask(params);
+
+      expect(defaultRequestHandler.getTask.notCalled).to.be.true;
+      expect(firstAfterCalled).to.be.true;
+      expect(secondAfterCalled).to.be.true;
+      expect(thirdAfterCalled).to.be.false;
+      expect(result).to.equal(task);
+    });
+
+    it('should intercept each iterator item', async () => {
+      const params: MessageSendParams = {
+        message: { kind: 'message', messageId: '1', role: 'user', parts: [] },
+      };
+      const events: A2AStreamEventData[] = [
+        {
+          kind: 'status-update',
+          taskId: '123',
+          contextId: 'ctx1',
+          final: false,
+          status: { state: 'working' },
+        },
+        {
+          kind: 'status-update',
+          taskId: '123',
+          contextId: 'ctx1',
+          final: false,
+          status: { state: 'completed' },
+        },
+      ];
+      async function* stream() {
+        yield* events;
+      }
+      defaultRequestHandler.sendMessageStream.returns(stream());
+      const interceptors = [
+        {
+          before: async () => {},
+          after: async (args: any) => {
+            if (args.result.method === 'sendMessageStream') {
+              args.result.value = {
+                ...args.result.value,
+                metadata: { foo: 'bar' },
+              };
+            }
+          },
+        },
+      ];
+      interceptor = new RequestHandlerInterceptor(
+        agentCard,
+        taskStore,
+        agentExecutor,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        interceptors as HandlerInterceptor[]
+      );
+      (interceptor as any).requestHandler = defaultRequestHandler;
+
+      const result = await interceptor.sendMessageStream(params);
+
+      const got = [];
+      for await (const event of result) {
+        got.push(event);
+      }
+      expect(defaultRequestHandler.sendMessageStream.calledOnceWith(params)).to.be.true;
+      expect(got).to.deep.equal(events.map((event) => ({ ...event, metadata: { foo: 'bar' } })));
+    });
+
+    it('should intercept after non-streaming sendMessage for sendMessageStream', async () => {
+      const params: MessageSendParams = {
+        message: { kind: 'message', messageId: '1', role: 'user', parts: [] },
+      };
+      const message: Message = {
+        kind: 'message',
+        messageId: '2',
+        role: 'agent',
+        parts: [],
+      };
+      defaultRequestHandler.sendMessage.resolves(message);
+      const interceptors = [
+        {
+          before: async () => {},
+          after: async (args: any) => {
+            if (args.result.method === 'sendMessageStream') {
+              args.result.value = { ...args.result.value, metadata: { foo: 'bar' } };
+            }
+          },
+        },
+      ];
+      interceptor = new RequestHandlerInterceptor(
+        { ...agentCard, capabilities: { streaming: false } },
+        taskStore,
+        agentExecutor,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        interceptors as HandlerInterceptor[]
+      );
+      (interceptor as any).requestHandler = defaultRequestHandler;
+
+      const result = await interceptor.sendMessageStream(params);
+
+      const got = [];
+      for await (const event of result) {
+        got.push(event);
+      }
+      expect(got).to.deep.equal([{ ...message, metadata: { foo: 'bar' } }]);
+    });
+
+    const iteratorsTests = [
+      {
+        name: 'sendMessageStream',
+        stubGetter: (h: any) => h.sendMessageStream,
+        caller: async (i: RequestHandlerInterceptor) =>
+          await i.sendMessageStream({
+            message: { kind: 'message', messageId: '1', role: 'user', parts: [] },
+          }),
+      },
+      {
+        name: 'resubscribe',
+        stubGetter: (h: any) => h.resubscribe,
+        caller: async (i: RequestHandlerInterceptor) => await i.resubscribe({ id: '123' }),
+      },
+    ];
+
+    iteratorsTests.forEach((test) => {
+      describe(test.name, () => {
+        it('should return early from iterator (before)', async () => {
+          const events: A2AStreamEventData[] = [
+            {
+              kind: 'status-update',
+              taskId: '123',
+              contextId: 'ctx1',
+              final: false,
+              status: { state: 'working' },
+            },
+            {
+              kind: 'status-update',
+              taskId: '123',
+              contextId: 'ctx1',
+              final: false,
+              status: { state: 'completed' },
+            },
+          ];
+          async function* stream() {
+            yield* events;
+          }
+          const stub = test.stubGetter(defaultRequestHandler);
+          stub.returns(stream());
+
+          let firstAfterCalled = false;
+          let secondAfterCalled = false;
+          let thirdAfterCalled = false;
+          const interceptors = [
+            {
+              before: async () => {},
+              after: async () => {
+                firstAfterCalled = true;
+              },
+            },
+            {
+              before: async (args: any) => {
+                if (args.input.method === test.name) {
+                  args.earlyReturn = {
+                    method: args.input.method,
+                    value: events[0],
+                  };
+                }
+              },
+              after: async () => {
+                secondAfterCalled = true;
+              },
+            },
+            {
+              before: async () => {},
+              after: async () => {
+                thirdAfterCalled = true;
+              },
+            },
+          ];
+          interceptor = new RequestHandlerInterceptor(
+            agentCard,
+            taskStore,
+            agentExecutor,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            interceptors as HandlerInterceptor[]
+          );
+          (interceptor as any).requestHandler = defaultRequestHandler;
+
+          const result = await test.caller(interceptor);
+
+          const got = [];
+          for await (const event of result) {
+            got.push(event);
+          }
+          expect(stub.notCalled).to.be.true;
+          expect(got).to.deep.equal([events[0]]);
+          expect(firstAfterCalled).to.be.true;
+          expect(secondAfterCalled).to.be.true;
+          expect(thirdAfterCalled).to.be.false;
+        });
+
+        it('should return early from iterator (after)', async () => {
+          const events: A2AStreamEventData[] = [
+            {
+              kind: 'status-update',
+              taskId: '123',
+              contextId: 'ctx1',
+              final: false,
+              status: { state: 'working' },
+            },
+            {
+              kind: 'status-update',
+              taskId: '123',
+              contextId: 'ctx1',
+              final: false,
+              status: { state: 'completed' },
+            },
+          ];
+          async function* stream() {
+            yield* events;
+          }
+          const stub = test.stubGetter(defaultRequestHandler);
+          stub.returns(stream());
+          const interceptors = [
+            {
+              before: async () => {},
+              after: async (args: any) => {
+                if (args.result.method === test.name) {
+                  const event = args.result.value as A2AStreamEventData;
+                  if (event.kind === 'status-update' && event.status.state === 'working') {
+                    args.earlyReturn = true;
+                  }
+                }
+              },
+            },
+          ];
+          interceptor = new RequestHandlerInterceptor(
+            agentCard,
+            taskStore,
+            agentExecutor,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            interceptors as HandlerInterceptor[]
+          );
+          (interceptor as any).requestHandler = defaultRequestHandler;
+
+          const result = await test.caller(interceptor);
+
+          const got = [];
+          for await (const event of result) {
+            got.push(event);
+          }
+          expect(stub.calledOnce).to.be.true;
+          expect(got).to.deep.equal([events[0]]);
+        });
+      });
+    });
   });
 });
