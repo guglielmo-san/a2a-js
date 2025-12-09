@@ -261,11 +261,11 @@ export class JsonRpcTransport implements Transport {
     return this._fetch(this.endpoint, requestInit);
   }
 
-  private async *_sendStreamingRequest(
+  private async *_sendStreamingRequest<T>(
     method: string,
     params: unknown,
     options?: RequestOptions
-  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
+  ): AsyncGenerator<T, void, undefined> {
     const clientRequestId = this.requestIdCounter++;
     const rpcRequest: JSONRPCRequest = {
       jsonrpc: '2.0',
@@ -303,7 +303,7 @@ export class JsonRpcTransport implements Transport {
       );
     }
 
-    yield* this._parseA2ASseStream<A2AStreamEventData>(response, clientRequestId);
+    yield* this._parseA2ASseStream<T>(response, clientRequestId);
   }
 
   private async *_parseA2ASseStream<TStreamItem>(

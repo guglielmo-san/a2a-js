@@ -308,7 +308,7 @@ export class A2AClient {
    */
   public async *resubscribeTask(
     params: TaskIdParams
-  ): AsyncGenerator<A2AStreamEventDataResubscribe, void, undefined> {
+  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
     const agentCard = await this.agentCardPromise;
     if (!agentCard.capabilities?.streaming) {
       throw new Error('Agent does not support streaming (required for tasks/resubscribe).');
