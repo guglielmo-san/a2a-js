@@ -34,7 +34,6 @@ import {
 import { PushNotificationSender } from '../push_notification/push_notification_sender.js';
 import { DefaultPushNotificationSender } from '../push_notification/default_push_notification_sender.js';
 import { ServerCallContext } from '../context.js';
-import { AfterArgs, BeforeArgs, HandlerInterceptor, ServerCallResult } from '../interceptors.js';
 
 const terminalStates: TaskState[] = ['completed', 'failed', 'canceled', 'rejected'];
 
@@ -54,7 +53,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     eventBusManager: ExecutionEventBusManager = new DefaultExecutionEventBusManager(),
     pushNotificationStore?: PushNotificationStore,
     pushNotificationSender?: PushNotificationSender,
-    extendedAgentCardProvider?: AgentCard | ExtendedAgentCardProvider,
+    extendedAgentCardProvider?: AgentCard | ExtendedAgentCardProvider
   ) {
     this.agentCard = agentCard;
     this.taskStore = taskStore;

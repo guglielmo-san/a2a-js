@@ -1,7 +1,6 @@
-import { A2AStreamEventData } from "../client/client.js";
-import { ServerCallContext } from "./context.js";
-import { A2ARequestHandler } from "./request_handler/a2a_request_handler.js";
-
+import { A2AStreamEventData } from '../client/client.js';
+import { ServerCallContext } from './context.js';
+import { A2ARequestHandler } from './request_handler/a2a_request_handler.js';
 
 export interface HandlerInterceptor {
   /**
@@ -16,11 +15,11 @@ export interface HandlerInterceptor {
 }
 
 export interface EarlyReturnBefore<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
-  value: ServerCallResult<K>
+  value: ServerCallResult<K>;
 }
 
 export interface EarlyReturnAfter {
-  value: boolean
+  value: boolean;
 }
 
 export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
@@ -43,13 +42,10 @@ export interface AfterArgs<K extends keyof A2ARequestHandler = keyof A2ARequestH
   context?: ServerCallContext;
 }
 
-export type ServerCallInput<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> = MethodInput<A2ARequestHandler, K>;
-export type ServerCallResult<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> = MethodResult<
-  A2ARequestHandler,
-  K,
-  ResultsOverrides
->;
-
+export type ServerCallInput<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> =
+  MethodInput<A2ARequestHandler, K>;
+export type ServerCallResult<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> =
+  MethodResult<A2ARequestHandler, K, ResultsOverrides>;
 
 // Types below are helper types and are not exported to allow simplifying it without affecting
 // public API if necessary. They are exported via type aliases ServerXxx which can be replaced with explicit union if necessary.
