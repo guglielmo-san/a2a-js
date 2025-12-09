@@ -30,7 +30,7 @@ import {
   GetTaskPushNotificationConfigParams,
   GetAuthenticatedExtendedCardSuccessResponse,
 } from '../../types.js';
-import { A2AStreamEventData, SendMessageResult } from '../client.js';
+import { A2AStreamEventData, A2AStreamEventDataResubscribe, SendMessageResult } from '../client.js';
 import { RequestOptions } from '../multitransport-client.js';
 import { Transport, TransportFactory } from './transport.js';
 
@@ -156,7 +156,7 @@ export class JsonRpcTransport implements Transport {
   async *resubscribeTask(
     params: TaskIdParams,
     options?: RequestOptions
-  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
+  ): AsyncGenerator<A2AStreamEventDataResubscribe, void, undefined> {
     yield* this._sendStreamingRequest('tasks/resubscribe', params, options);
   }
 
