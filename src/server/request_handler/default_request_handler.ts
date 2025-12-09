@@ -26,7 +26,7 @@ import { AgentExecutionEvent } from '../events/execution_event_bus.js';
 import { ExecutionEventQueue } from '../events/execution_event_queue.js';
 import { ResultManager } from '../result_manager.js';
 import { TaskStore } from '../store.js';
-import { A2ARequestHandler } from './a2a_request_handler.js';
+import { A2ARequestHandler, A2AStreamEventData } from './a2a_request_handler.js';
 import {
   InMemoryPushNotificationStore,
   PushNotificationStore,
@@ -305,11 +305,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
   async *sendMessageStream(
     params: MessageSendParams,
     context?: ServerCallContext
-  ): AsyncGenerator<
-    Message | Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent,
-    void,
-    undefined
-  > {
+  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
     const incomingMessage = params.message;
     if (!incomingMessage.messageId) {
       // For streams, messageId might be set by client, or server can generate if not present.
@@ -541,13 +537,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
   async *resubscribe(
     params: TaskIdParams,
     _context?: ServerCallContext
-  ): AsyncGenerator<
-    | Task // Initial task state
-    | TaskStatusUpdateEvent
-    | TaskArtifactUpdateEvent,
-    void,
-    undefined
-  > {
+  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
     if (!this.agentCard.capabilities.streaming) {
       throw A2AError.unsupportedOperation('Streaming (and thus resubscription) is not supported.');
     }

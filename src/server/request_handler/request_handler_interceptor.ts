@@ -3,8 +3,6 @@ import {
   AgentCard,
   Task,
   MessageSendParams,
-  TaskStatusUpdateEvent,
-  TaskArtifactUpdateEvent,
   TaskQueryParams,
   TaskIdParams,
   TaskPushNotificationConfig,
@@ -19,15 +17,15 @@ import {
   DefaultExecutionEventBusManager,
 } from '../events/execution_event_bus_manager.js';
 import { TaskStore } from '../store.js';
-import { A2ARequestHandler } from './a2a_request_handler.js';
+import { A2ARequestHandler, A2AStreamEventData } from './a2a_request_handler.js';
 import { PushNotificationStore } from '../push_notification/push_notification_store.js';
 import { PushNotificationSender } from '../push_notification/push_notification_sender.js';
 import { ServerCallContext } from '../context.js';
 import {
   AfterArgs,
   BeforeArgs,
-  EarlyReturnBefore,
   HandlerInterceptor,
+  ServerCallInput,
   ServerCallResult,
 } from '../interceptors.js';
 import { DefaultRequestHandler } from './default_request_handler.js';
@@ -61,102 +59,56 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
   }
 
   async getAgentCard(): Promise<AgentCard> {
-    const beforeArgs: BeforeArgs<'getAgentCard'> = {
-      input: {
-        method: 'getAgentCard',
-      },
-      context: undefined,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.getAgentCard();
-
-    const afterArgs: AfterArgs<'getAgentCard'> = {
-      result: {
-        method: 'getAgentCard',
-        value: result,
-      },
-      context: undefined,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
+    return this.executeWithInterceptors(
+      { method: 'getAgentCard' },
+      undefined,
+      this.requestHandler.getAgentCard.bind(this.requestHandler)
+    );
   }
 
   async getAuthenticatedExtendedAgentCard(context?: ServerCallContext): Promise<AgentCard> {
-    const beforeArgs: BeforeArgs<'getAuthenticatedExtendedAgentCard'> = {
-      input: {
-        method: 'getAuthenticatedExtendedAgentCard',
-      },
+    return this.executeWithInterceptors(
+      { method: 'getAuthenticatedExtendedAgentCard' },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.getAuthenticatedExtendedAgentCard(beforeArgs.context);
-
-    const afterArgs: AfterArgs<'getAuthenticatedExtendedAgentCard'> = {
-      result: {
-        method: 'getAuthenticatedExtendedAgentCard',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
+      this.requestHandler.getAgentCard.bind(this.requestHandler)
+    );
   }
 
   async sendMessage(
     params: MessageSendParams,
     context?: ServerCallContext
   ): Promise<Message | Task> {
-    const beforeArgs: BeforeArgs<'sendMessage'> = {
-      input: {
-        method: 'sendMessage',
-        value: params,
-      },
+    return this.executeWithInterceptors(
+      { method: 'sendMessage', value: params },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.sendMessage(
-      beforeArgs.input.value,
-      beforeArgs.context
+      this.requestHandler.sendMessage.bind(this.requestHandler)
     );
-
-    const afterArgs: AfterArgs<'sendMessage'> = {
-      result: {
-        method: 'sendMessage',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
   }
 
   async *sendMessageStream(
     params: MessageSendParams,
     context?: ServerCallContext
-  ): AsyncGenerator<
-    Message | Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent,
-    void,
-    undefined
-  > {
+  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
     const beforeArgs: BeforeArgs<'sendMessageStream'> = {
       input: {
         method: 'sendMessageStream',
         value: params,
       },
+      agentCard: this.agentCard,
       context,
     };
     const earlyReturn = await this.interceptBefore(beforeArgs);
     if (earlyReturn) {
-      yield earlyReturn.value;
+      const afterArgs: AfterArgs<'sendMessageStream'> = {
+        result: {
+          method: 'sendMessageStream',
+          value: earlyReturn.earlyReturn.value,
+        },
+        agentCard: this.agentCard,
+        context: beforeArgs.context,
+      };
+      this.interceptAfter(afterArgs);
+      yield afterArgs.result.value;
       return;
     }
     if (this.agentCard.capabilities.streaming) {
@@ -169,7 +121,8 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
           method: 'sendMessageStream',
           value: result,
         },
-        context,
+        agentCard: this.agentCard,
+        context: beforeArgs.context,
       };
       this.interceptAfter(afterArgs);
       yield afterArgs.result.value;
@@ -185,7 +138,8 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
           method: 'sendMessageStream',
           value: result,
         },
-        context,
+        agentCard: this.agentCard,
+        context: beforeArgs.context,
       };
       this.interceptAfter(afterArgs);
       yield afterArgs.result.value;
@@ -193,200 +147,89 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
   }
 
   async getTask(params: TaskQueryParams, context?: ServerCallContext): Promise<Task> {
-    const beforeArgs: BeforeArgs<'getTask'> = {
-      input: {
-        method: 'getTask',
-        value: params,
-      },
+    return this.executeWithInterceptors(
+      { method: 'getTask', value: params },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.getTask(beforeArgs.input.value, beforeArgs.context);
-
-    const afterArgs: AfterArgs<'getTask'> = {
-      result: {
-        method: 'getTask',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
+      this.requestHandler.getTask.bind(this.requestHandler)
+    );
   }
 
   async cancelTask(params: TaskIdParams, context?: ServerCallContext): Promise<Task> {
-    const beforeArgs: BeforeArgs<'cancelTask'> = {
-      input: {
-        method: 'cancelTask',
-        value: params,
-      },
+    return this.executeWithInterceptors(
+      { method: 'cancelTask', value: params },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.getTask(beforeArgs.input.value, beforeArgs.context);
-
-    const afterArgs: AfterArgs<'cancelTask'> = {
-      result: {
-        method: 'cancelTask',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
+      this.requestHandler.cancelTask.bind(this.requestHandler)
+    );
   }
 
   async setTaskPushNotificationConfig(
     params: TaskPushNotificationConfig,
     context?: ServerCallContext
   ): Promise<TaskPushNotificationConfig> {
-    const beforeArgs: BeforeArgs<'setTaskPushNotificationConfig'> = {
-      input: {
-        method: 'setTaskPushNotificationConfig',
-        value: params,
-      },
+    return this.executeWithInterceptors(
+      { method: 'setTaskPushNotificationConfig', value: params },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.setTaskPushNotificationConfig(
-      beforeArgs.input.value,
-      beforeArgs.context
+      this.requestHandler.setTaskPushNotificationConfig.bind(this.requestHandler)
     );
-
-    const afterArgs: AfterArgs<'setTaskPushNotificationConfig'> = {
-      result: {
-        method: 'setTaskPushNotificationConfig',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
   }
 
   async getTaskPushNotificationConfig(
     params: TaskIdParams | GetTaskPushNotificationConfigParams,
     context?: ServerCallContext
   ): Promise<TaskPushNotificationConfig> {
-    const beforeArgs: BeforeArgs<'getTaskPushNotificationConfig'> = {
-      input: {
-        method: 'getTaskPushNotificationConfig',
-        value: params,
-      },
+    return this.executeWithInterceptors(
+      { method: 'getTaskPushNotificationConfig', value: params },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.getTaskPushNotificationConfig(
-      beforeArgs.input.value,
-      beforeArgs.context
+      this.requestHandler.getTaskPushNotificationConfig.bind(this.requestHandler)
     );
-
-    const afterArgs: AfterArgs<'getTaskPushNotificationConfig'> = {
-      result: {
-        method: 'getTaskPushNotificationConfig',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
   }
 
   async listTaskPushNotificationConfigs(
     params: ListTaskPushNotificationConfigParams,
     context?: ServerCallContext
   ): Promise<TaskPushNotificationConfig[]> {
-    const beforeArgs: BeforeArgs<'listTaskPushNotificationConfigs'> = {
-      input: {
-        method: 'listTaskPushNotificationConfigs',
-        value: params,
-      },
+    return this.executeWithInterceptors(
+      { method: 'listTaskPushNotificationConfigs', value: params },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.listTaskPushNotificationConfigs(
-      beforeArgs.input.value,
-      beforeArgs.context
+      this.requestHandler.listTaskPushNotificationConfigs.bind(this.requestHandler)
     );
-
-    const afterArgs: AfterArgs<'listTaskPushNotificationConfigs'> = {
-      result: {
-        method: 'listTaskPushNotificationConfigs',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
   }
 
   async deleteTaskPushNotificationConfig(
     params: DeleteTaskPushNotificationConfigParams,
     context?: ServerCallContext
   ): Promise<void> {
-    const beforeArgs: BeforeArgs<'deleteTaskPushNotificationConfig'> = {
-      input: {
-        method: 'deleteTaskPushNotificationConfig',
-        value: params,
-      },
+    return this.executeWithInterceptors(
+      { method: 'deleteTaskPushNotificationConfig', value: params },
       context,
-    };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
-      return earlyReturn.value;
-    }
-    const result = await this.requestHandler.deleteTaskPushNotificationConfig(
-      beforeArgs.input.value,
-      beforeArgs.context
+      this.requestHandler.deleteTaskPushNotificationConfig.bind(this.requestHandler)
     );
-
-    const afterArgs: AfterArgs<'deleteTaskPushNotificationConfig'> = {
-      result: {
-        method: 'deleteTaskPushNotificationConfig',
-        value: result,
-      },
-      context,
-    };
-    this.interceptAfter(afterArgs);
-    return afterArgs.result.value;
   }
 
   async *resubscribe(
     params: TaskIdParams,
     context?: ServerCallContext
-  ): AsyncGenerator<
-    | Message
-    | Task // Initial task state
-    | TaskStatusUpdateEvent
-    | TaskArtifactUpdateEvent,
-    void,
-    undefined
-  > {
+  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
     const beforeArgs: BeforeArgs<'resubscribe'> = {
       input: {
         method: 'resubscribe',
         value: params,
       },
+      agentCard: this.agentCard,
       context,
     };
     const earlyReturn = await this.interceptBefore(beforeArgs);
     if (earlyReturn) {
-      yield earlyReturn.value;
+      const afterArgs: AfterArgs<'sendMessageStream'> = {
+        result: {
+          method: 'sendMessageStream',
+          value: earlyReturn.earlyReturn.value,
+        },
+        agentCard: this.agentCard,
+        context: beforeArgs.context,
+      };
+      this.interceptAfter(afterArgs, earlyReturn.executed);
+      yield afterArgs.result.value;
       return;
     }
 
@@ -396,37 +239,72 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
           method: 'sendMessageStream',
           value: result,
         },
-        context,
+        agentCard: this.agentCard,
+        context: beforeArgs.context,
       };
       this.interceptAfter(afterArgs);
       yield afterArgs.result.value;
     }
   }
 
+  private async executeWithInterceptors<K extends keyof A2ARequestHandler>(
+    input: ServerCallInput<K>,
+    context: ServerCallContext | undefined,
+    transportCall: (
+      params: ServerCallInput<K>['value'],
+      context?: ServerCallContext
+    ) => Promise<ServerCallResult<K>['value']>
+  ): Promise<ServerCallResult<K>['value']> {
+    const beforeArgs: BeforeArgs<K> = {
+      input: input,
+      agentCard: this.agentCard,
+      context,
+    };
+    const beforeResult = await this.interceptBefore(beforeArgs);
+
+    if (beforeResult) {
+      const afterArgs: AfterArgs<K> = {
+        result: {
+          method: input.method,
+          value: beforeResult.earlyReturn.value,
+        } as ServerCallResult<K>,
+        agentCard: this.agentCard,
+        context: beforeArgs.context,
+      };
+      await this.interceptAfter(afterArgs, beforeResult.executed);
+      return afterArgs.result.value;
+    }
+
+    const result = await transportCall(beforeArgs.input.value, beforeArgs.context);
+
+    const afterArgs: AfterArgs<K> = {
+      result: { method: input.method, value: result } as ServerCallResult<K>,
+      agentCard: this.agentCard,
+      context: beforeArgs.context,
+    };
+    await this.interceptAfter(afterArgs);
+
+    return afterArgs.result.value;
+  }
+
   private async interceptBefore<K extends keyof A2ARequestHandler>(
     args: BeforeArgs<K>
-  ): Promise<ServerCallResult<K> | undefined> {
+  ): Promise<{ earlyReturn: ServerCallResult<K>; executed: HandlerInterceptor[] } | undefined> {
     const executedInterceptors: HandlerInterceptor[] = [];
-    let earlyReturn: EarlyReturnBefore;
     for (const interceptor of this.handlerInterceptors || []) {
       executedInterceptors.push(interceptor);
-      const result = await interceptor.before(args);
-      if (result) {
-        earlyReturn = result;
-        break;
+      const earlyReturn = await interceptor.before(args);
+      if (earlyReturn) {
+        if (earlyReturn.value.method !== args.input.method) {
+          throw A2AError.internalError(
+            `Interceptor returned result for method '${earlyReturn.value.method}' but expected '${args.input.method}'.`
+          );
+        }
+        return {
+          earlyReturn: earlyReturn.value as ServerCallResult<K>,
+          executed: executedInterceptors,
+        };
       }
-    }
-    if (earlyReturn) {
-      if (earlyReturn.value.method !== args.input.method) {
-        throw A2AError.internalError(
-          `Interceptor returned result for method '${earlyReturn.value.method}' but expected '${args.input.method}'.`
-        );
-      }
-      this.interceptAfter(
-        { result: earlyReturn.value, context: args.context },
-        executedInterceptors
-      );
-      return earlyReturn.value as ServerCallResult<K>;
     }
   }
 

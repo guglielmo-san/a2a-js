@@ -1,6 +1,7 @@
-import { A2AStreamEventData } from '../client/client.js';
+import { A2AStreamEventData } from './request_handler/a2a_request_handler.js';
 import { ServerCallContext } from './context.js';
 import { A2ARequestHandler } from './request_handler/a2a_request_handler.js';
+import { AgentCard } from '../types.js';
 
 export interface HandlerInterceptor {
   /**
@@ -29,6 +30,8 @@ export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequest
    */
   readonly input: ServerCallInput<K>;
 
+  readonly agentCard: AgentCard;
+
   context?: ServerCallContext;
 }
 
@@ -38,6 +41,8 @@ export interface AfterArgs<K extends keyof A2ARequestHandler = keyof A2ARequestH
    * Payload inside the result object can be modified.
    */
   readonly result: ServerCallResult<K>;
+
+  readonly agentCard: AgentCard;
 
   context?: ServerCallContext;
 }
