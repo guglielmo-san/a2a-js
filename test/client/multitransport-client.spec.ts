@@ -747,7 +747,8 @@ describe('Client', () => {
         name: 'resubscribeTask',
         transportStubGetter: (t: sinon.SinonStubbedInstance<Transport>): sinon.SinonStub =>
           t.resubscribeTask,
-        caller: (c: Client): AsyncGenerator<A2AStreamEventDataResubscribe> => c.resubscribeTask({ id: '123' }),
+        caller: (c: Client): AsyncGenerator<A2AStreamEventDataResubscribe> =>
+          c.resubscribeTask({ id: '123' }),
       },
     ];
 
