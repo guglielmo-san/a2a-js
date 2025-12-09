@@ -16,10 +16,18 @@ export interface HandlerInterceptor {
 }
 
 export interface EarlyReturnBefore<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
-  value: ServerCallResult<K>;
+  /**
+   * If set by the interceptor, stops execution, invokes "after"
+   * for executed interceptors and returns the result. Request Handler is not called.
+   */
+  value: HandlerCallResult<K>;
 }
 
 export interface EarlyReturnAfter {
+  /**
+   * If set by the interceptor, stops execution and returns result value,
+   * remaining interceptors are not executed.
+   */
   value: boolean;
 }
 
@@ -28,10 +36,16 @@ export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequest
    * Identifies the Server method invoked and its payload.
    * Payload inside the input object can be modified.
    */
-  readonly input: ServerCallInput<K>;
+  readonly input: HandlerCallInput<K>;
 
+  /**
+   * Identifies the agent card used to create the handler
+   */
   readonly agentCard: AgentCard;
 
+  /**
+   * Identifies the context created by the server
+   */
   context?: ServerCallContext;
 }
 
@@ -40,16 +54,22 @@ export interface AfterArgs<K extends keyof A2ARequestHandler = keyof A2ARequestH
    * Identifies the Server method invoked and its result.
    * Payload inside the result object can be modified.
    */
-  readonly result: ServerCallResult<K>;
+  readonly result: HandlerCallResult<K>;
 
+  /**
+   * Identifies the agent card used to create the handler
+   */
   readonly agentCard: AgentCard;
 
+  /**
+   * Identifies the context created by the server
+   */
   context?: ServerCallContext;
 }
 
-export type ServerCallInput<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> =
+export type HandlerCallInput<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> =
   MethodInput<A2ARequestHandler, K>;
-export type ServerCallResult<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> =
+export type HandlerCallResult<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> =
   MethodResult<A2ARequestHandler, K, ResultsOverrides>;
 
 // Types below are helper types and are not exported to allow simplifying it without affecting

@@ -25,8 +25,8 @@ import {
   AfterArgs,
   BeforeArgs,
   HandlerInterceptor,
-  ServerCallInput,
-  ServerCallResult,
+  HandlerCallInput,
+  HandlerCallResult,
 } from '../interceptors.js';
 import { DefaultRequestHandler } from './default_request_handler.js';
 
@@ -70,7 +70,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
     return this.executeWithInterceptors(
       { method: 'getAuthenticatedExtendedAgentCard' },
       context,
-      this.requestHandler.getAgentCard.bind(this.requestHandler)
+      this.requestHandler.getAuthenticatedExtendedAgentCard.bind(this.requestHandler)
     );
   }
 
@@ -97,12 +97,12 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
       agentCard: this.agentCard,
       context,
     };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
+    const beforeResult = await this.interceptBefore(beforeArgs);
+    if (beforeResult) {
       const afterArgs: AfterArgs<'sendMessageStream'> = {
         result: {
           method: 'sendMessageStream',
-          value: earlyReturn.earlyReturn.value,
+          value: beforeResult.earlyReturn.value,
         },
         agentCard: this.agentCard,
         context: beforeArgs.context,
@@ -111,7 +111,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
       yield afterArgs.result.value;
       return;
     }
-    if (this.agentCard.capabilities.streaming) {
+    if (!this.agentCard.capabilities.streaming) {
       const result = await this.requestHandler.sendMessage(
         beforeArgs.input.value,
         beforeArgs.context
@@ -218,17 +218,17 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
       agentCard: this.agentCard,
       context,
     };
-    const earlyReturn = await this.interceptBefore(beforeArgs);
-    if (earlyReturn) {
+    const beforeResult = await this.interceptBefore(beforeArgs);
+    if (beforeResult) {
       const afterArgs: AfterArgs<'sendMessageStream'> = {
         result: {
           method: 'sendMessageStream',
-          value: earlyReturn.earlyReturn.value,
+          value: beforeResult.earlyReturn.value,
         },
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
-      this.interceptAfter(afterArgs, earlyReturn.executed);
+      this.interceptAfter(afterArgs, beforeResult.executed);
       yield afterArgs.result.value;
       return;
     }
@@ -248,13 +248,13 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
   }
 
   private async executeWithInterceptors<K extends keyof A2ARequestHandler>(
-    input: ServerCallInput<K>,
+    input: HandlerCallInput<K>,
     context: ServerCallContext | undefined,
     transportCall: (
-      params: ServerCallInput<K>['value'],
+      params: HandlerCallInput<K>['value'],
       context?: ServerCallContext
-    ) => Promise<ServerCallResult<K>['value']>
-  ): Promise<ServerCallResult<K>['value']> {
+    ) => Promise<HandlerCallResult<K>['value']>
+  ): Promise<HandlerCallResult<K>['value']> {
     const beforeArgs: BeforeArgs<K> = {
       input: input,
       agentCard: this.agentCard,
@@ -267,7 +267,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
         result: {
           method: input.method,
           value: beforeResult.earlyReturn.value,
-        } as ServerCallResult<K>,
+        } as HandlerCallResult<K>,
         agentCard: this.agentCard,
         context: beforeArgs.context,
       };
@@ -278,7 +278,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
     const result = await transportCall(beforeArgs.input.value, beforeArgs.context);
 
     const afterArgs: AfterArgs<K> = {
-      result: { method: input.method, value: result } as ServerCallResult<K>,
+      result: { method: input.method, value: result } as HandlerCallResult<K>,
       agentCard: this.agentCard,
       context: beforeArgs.context,
     };
@@ -289,7 +289,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
 
   private async interceptBefore<K extends keyof A2ARequestHandler>(
     args: BeforeArgs<K>
-  ): Promise<{ earlyReturn: ServerCallResult<K>; executed: HandlerInterceptor[] } | undefined> {
+  ): Promise<{ earlyReturn: HandlerCallResult<K>; executed: HandlerInterceptor[] } | undefined> {
     const executedInterceptors: HandlerInterceptor[] = [];
     for (const interceptor of this.handlerInterceptors || []) {
       executedInterceptors.push(interceptor);
@@ -301,7 +301,7 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
           );
         }
         return {
-          earlyReturn: earlyReturn.value as ServerCallResult<K>,
+          earlyReturn: earlyReturn.value as HandlerCallResult<K>,
           executed: executedInterceptors,
         };
       }
