@@ -261,7 +261,7 @@ export class JsonRpcTransport implements Transport {
     return this._fetch(this.endpoint, requestInit);
   }
 
-  private async *_sendStreamingRequest<T>(
+  private async *_sendStreamingRequest<T extends A2AStreamEventData>(
     method: string,
     params: unknown,
     options?: RequestOptions
