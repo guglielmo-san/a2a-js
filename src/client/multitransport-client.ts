@@ -80,7 +80,7 @@ export class Client {
       this.agentCard = await this.executeWithInterceptors(
         { method: 'getAgentCard' },
         options,
-        (_, options) => this.transport.getExtendedAgentCard(options)
+        this.transport.getExtendedAgentCard.bind(this.transport)
       );
     }
     return this.agentCard;
