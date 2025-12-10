@@ -11,12 +11,23 @@ export interface DefaultPushNotificationSenderOptions {
    * Custom header name for the token. Defaults to 'X-A2A-Notification-Token'.
    */
   tokenHeaderName?: string;
+  /**
+   * Custom implementation for the dispatchNotification function
+   */
+  customDispatchNotification?(task: Task, pushConfig: PushNotificationConfig): Promise<void>;
 }
+
+export const DefaultPushNotificationSenderOptions = {
+  default: {
+    timeout: 5000,
+    tokenHeaderName: 'X-A2A-Notification-Token',
+  }
+};
 
 export class DefaultPushNotificationSender implements PushNotificationSender {
   private readonly pushNotificationStore: PushNotificationStore;
   private notificationChain: Map<string, Promise<unknown>>;
-  private readonly options: Required<DefaultPushNotificationSenderOptions>;
+  private readonly options: DefaultPushNotificationSenderOptions;
 
   constructor(
     pushNotificationStore: PushNotificationStore,
@@ -25,8 +36,7 @@ export class DefaultPushNotificationSender implements PushNotificationSender {
     this.pushNotificationStore = pushNotificationStore;
     this.notificationChain = new Map();
     this.options = {
-      timeout: 5000,
-      tokenHeaderName: 'X-A2A-Notification-Token',
+      ...DefaultPushNotificationSenderOptions.default,
       ...options,
     };
   }
@@ -44,7 +54,8 @@ export class DefaultPushNotificationSender implements PushNotificationSender {
     const newPromise = lastPromise.then(async () => {
       const dispatches = pushConfigs.map(async (pushConfig) => {
         try {
-          await this._dispatchNotification(task, pushConfig);
+          this.options.customDispatchNotification ?
+            await this.options.customDispatchNotification(task, pushConfig) : await this._dispatchNotification(task, pushConfig);
         } catch (error) {
           console.error(
             `Error sending push notification for task_id=${task.id} to URL: ${pushConfig.url}. Error:`,

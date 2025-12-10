@@ -8,7 +8,7 @@ import { AddressInfo } from 'net';
 import { DefaultRequestHandler } from '../../src/server/request_handler/default_request_handler.js';
 import { InMemoryTaskStore } from '../../src/server/store.js';
 import { InMemoryPushNotificationStore } from '../../src/server/push_notification/push_notification_store.js';
-import { DefaultPushNotificationSender } from '../../src/server/push_notification/default_push_notification_sender.js';
+import { DefaultPushNotificationSender, DefaultPushNotificationSenderOptions } from '../../src/server/push_notification/default_push_notification_sender.js';
 import { DefaultExecutionEventBusManager } from '../../src/server/events/execution_event_bus_manager.js';
 import {
   AgentCard,
@@ -695,6 +695,116 @@ describe('Push Notification Integration Tests', () => {
 
       // Both should have content-type
       receivedNotifications.forEach((notification) => {
+        assert.equal(
+          notification.headers['content-type'],
+          'application/json',
+          'Should include content-type header'
+        );
+      });
+    });
+  });
+  describe('Push Notification Sender with custom dispatch notification method', () => {
+    it('should use custom dispatch notification method when provided', async () => {
+      const customDispatchNotification = 
+        async function ( task: Task, pushConfig: PushNotificationConfig ): Promise<void> {
+          const url = pushConfig.url;
+          const controller = new AbortController();
+          // Abort the request if it takes longer than the configured timeout.
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+          try {
+            const headers: Record<string, string> = {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer sample_jwt_token',
+            };
+
+            const response = await fetch(url, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(task),
+              signal: controller.signal,
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            console.info(`Push notification sent for task_id=${task.id} to URL: ${url}`);
+          } finally {
+            clearTimeout(timeoutId);
+          }
+      }
+      const options: DefaultPushNotificationSenderOptions = {
+        'customDispatchNotification': customDispatchNotification
+      }
+
+      const customPushNotificationSender = new DefaultPushNotificationSender(
+        pushNotificationStore,
+        options
+      );
+
+      const customHandler = new DefaultRequestHandler(
+        testAgentCard,
+        taskStore,
+        mockAgentExecutor,
+        new DefaultExecutionEventBusManager(),
+        pushNotificationStore,
+        customPushNotificationSender
+      );
+
+      const pushConfig: PushNotificationConfig = {
+        id: 'custom-dispatch-notification-test',
+        url: `${testServerUrl}/notify`,
+      };
+
+      const params: MessageSendParams = {
+        message: createTestMessage('Test with custom dispatch notification method'),
+        configuration: {
+          pushNotificationConfig: pushConfig,
+        },
+      };
+
+      // Mock the agent executor to publish completion
+      mockAgentExecutor.execute.callsFake(async (ctx, bus) => {
+        const taskId = ctx.taskId;
+        const contextId = ctx.contextId;
+
+        bus.publish({
+          id: taskId,
+          contextId,
+          status: { state: 'submitted' },
+          kind: 'task',
+        });
+
+        bus.publish({
+          taskId,
+          contextId,
+          kind: 'status-update',
+          status: { state: 'completed' },
+          final: true,
+        });
+
+        bus.finished();
+      });
+
+      await customHandler.sendMessage(params);
+
+      // Wait for async push notifications to be sent
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Verify custom header name is used
+      assert.lengthOf(
+        receivedNotifications,
+        2,
+        'Should send notifications for submitted and completed states'
+      );
+
+      receivedNotifications.forEach((notification) => {
+        assert.equal(
+          notification.headers['authorization'],
+          'Bearer sample_jwt_token',
+          'Should use authorization header as set in the custom dispatch'
+        );
         assert.equal(
           notification.headers['content-type'],
           'application/json',
