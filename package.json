@@ -42,8 +42,10 @@
   ],
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@grpc/grpc-js": "^1.14.2",
     "@types/chai": "^5.2.2",
     "@types/express": "^5.0.3",
+    "@types/google-protobuf": "^3.15.12",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.14",
     "@types/sinon": "^17.0.4",
@@ -55,6 +57,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "express": "^5.1.0",
+    "google-proto-files": "^5.0.1",
+    "google-protobuf": "^4.0.1",
     "gts": "^6.0.2",
     "json-schema-to-typescript": "^15.0.4",
     "mocha": "^11.6.0",
@@ -78,6 +82,7 @@
     "test-build:browser": "esbuild ./dist/client/index.js ./dist/index.js --bundle --platform=browser --outdir=dist/tmp-checks --outbase=./dist"
   },
   "dependencies": {
+    "ts-proto": "^2.8.3",
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
