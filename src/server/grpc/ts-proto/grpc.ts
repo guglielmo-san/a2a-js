@@ -1,8 +1,8 @@
 import * as grpc from '@grpc/grpc-js';
 import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, DeleteTaskPushNotificationConfigRequest, GetExtendedAgentCardRequest, GetTaskPushNotificationConfigRequest, GetTaskRequest, ListTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigResponse, ListTasksRequest, ListTasksResponse, Message, SendMessageRequest, SendMessageResponse, SetTaskPushNotificationConfigRequest, StreamResponse, SubscribeToTaskRequest, Task, TaskPushNotificationConfig } from './a2a.js';
-import { Task as A2ATask, MessageSendParams} from '../../types.js';
+import { Task as A2ATask, MessageSendParams} from '../../../types.js';
 import { Empty } from './google/protobuf/empty.js';
-import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
+import { A2ARequestHandler } from '../../request_handler/a2a_request_handler.js';
 
 export class gRPCTransportHandler implements A2AServiceServer {
     private requestHandler: A2ARequestHandler;

@@ -1,0 +1,9 @@
+# Learn more: https://buf.build/docs/configuration/v2/buf-gen-yaml
+version: v2
+inputs:
+  - proto_file: ../a2a.proto
+plugins:
+  - local: ../../../../node_modules/google-proto-files
+  - local: protoc-gen-es
+    opt: target=ts
+    out: src/gen
