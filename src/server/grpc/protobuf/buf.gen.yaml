@@ -8,3 +8,4 @@ plugins:
       - target=ts
       - import_extension=js
     out: src/gen
+    include_imports: true
