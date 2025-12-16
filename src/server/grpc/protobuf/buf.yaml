@@ -1,0 +1,5 @@
+version: v2
+modules:
+  - path: . # Path to where your 'a2a.proto' lives relative to this file
+deps:
+  - buf.build/googleapis/googleapis

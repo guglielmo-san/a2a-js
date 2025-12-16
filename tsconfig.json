@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "NodeNext",
+    "rewriteRelativeImportExtensions": true,
     "skipLibCheck": true,
     "rootDir": ".",
     "outDir": "build",

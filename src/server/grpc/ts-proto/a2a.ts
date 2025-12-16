@@ -20,9 +20,9 @@ import {
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
-import { Empty } from "./google/protobuf/empty.js";
-import { Struct } from "./google/protobuf/struct.js";
-import { Timestamp } from "./google/protobuf/timestamp.js";
+import { Empty } from "./google/protobuf/empty.ts";
+import { Struct } from "./google/protobuf/struct.ts";
+import { Timestamp } from "./google/protobuf/timestamp.ts";
 
 export const protobufPackage = "a2a.v1";
 

@@ -6,8 +6,8 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Duration } from "../protobuf/duration.js";
-import { LaunchStage, launchStageFromJSON, launchStageToJSON } from "./launch_stage.js";
+import { Duration } from "../protobuf/duration.ts";
+import { LaunchStage, launchStageFromJSON, launchStageToJSON } from "./launch_stage.ts";
 
 export const protobufPackage = "google.api";
 
