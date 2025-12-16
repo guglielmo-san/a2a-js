@@ -53,11 +53,13 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "express": "^5.1.0",
+    "google-proto-files": "^5.0.1",
     "gts": "^6.0.2",
     "json-schema-to-typescript": "^15.0.4",
     "prettier": "^3.6.2",
     "sinon": "^20.0.0",
     "supertest": "^7.1.4",
+    "ts-proto": "^2.8.3",
     "tsup": "^8.5.0",
     "tsx": "^4.19.3",
     "typescript": "^5.9.3",
@@ -73,10 +75,12 @@
     "format:readme": "prettier --write ./README.md",
     "lint:fix": "npx eslint . --fix",
     "coverage": "vitest run --coverage",
+    "ts-proto": "curl -o ./src/grpc/a2a.proto https://raw.githubusercontent.com/a2aproject/A2A/main/specification/grpc/a2a.proto && protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/grpc --ts_proto_opt=oneof=unions-value,importSuffix=.js,outputServices=grpc-js,env=node,esModuleInterop=true --proto_path=./src/grpc ./src/grpc/a2a.proto -I ./node_modules/google-proto-files && rm ./src/grpc/a2a.proto",
     "generate": "curl https://raw.githubusercontent.com/google-a2a/A2A/refs/heads/main/specification/json/a2a.json > spec.json && node scripts/generateTypes.js && rm spec.json",
     "test-build:browser": "esbuild ./dist/client/index.js ./dist/index.js --bundle --platform=browser --outdir=dist/tmp-checks --outbase=./dist"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
