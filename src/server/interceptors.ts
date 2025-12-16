@@ -7,28 +7,20 @@ export interface HandlerInterceptor {
   /**
    * Invoked before handler method.
    */
-  before(args: BeforeArgs): Promise<EarlyReturnBefore | void>;
+  before(args: BeforeArgs): Promise<EarlyReturn | void>;
 
   /**
    * Invoked after handler method.
    */
-  after(args: AfterArgs): Promise<EarlyReturnAfter | void>;
+  after(args: AfterArgs): Promise<EarlyReturn | void>;
 }
 
-export interface EarlyReturnBefore<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
+export interface EarlyReturn<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {
   /**
    * If set by the interceptor, stops execution, invokes "after"
    * for executed interceptors and returns the result. Request Handler is not called.
    */
   value: HandlerCallResult<K>;
-}
-
-export interface EarlyReturnAfter {
-  /**
-   * If set by the interceptor, stops execution and returns result value,
-   * remaining interceptors are not executed.
-   */
-  value: boolean;
 }
 
 export interface BeforeArgs<K extends keyof A2ARequestHandler = keyof A2ARequestHandler> {

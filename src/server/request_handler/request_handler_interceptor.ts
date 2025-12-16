@@ -318,12 +318,17 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
   private async interceptAfter<K extends keyof A2ARequestHandler>(
     args: AfterArgs<K>,
     interceptors?: HandlerInterceptor[]
-  ): Promise<{ earlyReturn: boolean } | undefined> {
+  ): Promise<{ earlyReturn: HandlerCallResult<K> } | undefined> {
     const reversedInterceptors = [...(interceptors || this.handlerInterceptors || [])].reverse();
     for (const interceptor of reversedInterceptors) {
       const earlyReturn = await interceptor.after(args);
-      if (earlyReturn && earlyReturn.value) {
-        return { earlyReturn: earlyReturn.value };
+      if (earlyReturn) {
+        if (earlyReturn.value.method !== args.result.method) {
+          throw A2AError.internalError(
+            `Interceptor returned result for method '${earlyReturn.value.method}' but expected '${args.result.method}'.`
+          );
+        }
+        return { earlyReturn: earlyReturn.value as HandlerCallResult<K>};
       }
     }
   }
