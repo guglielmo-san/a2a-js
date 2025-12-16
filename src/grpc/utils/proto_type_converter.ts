@@ -43,14 +43,6 @@ import {
     TaskStatus,
     TaskStatusUpdateEvent,
 } from '../a2a.js';
-import { Struct } from '../google/protobuf/struct.js';
-import { ServerError, InvalidParamsError } from '../../server/errors.js';
-
-// Regexp patterns for matching
-const _TASK_NAME_MATCH = /tasks\/([^/]+)/;
-const _TASK_PUSH_CONFIG_NAME_MATCH = /tasks\/([^/]+)\/pushNotificationConfigs\/([^/]+)/;
-
-
 /**
  * Converts proto types to internal types.
  */
@@ -59,12 +51,12 @@ export class FromProto {
         return {
             kind: 'message',
             messageId: message.messageId,
-            parts: message.parts.map(p => this.part(p)),
+            parts: message.parts.map(p => this.parts(p)),
             contextId: message.contextId || null,
             taskId: message.taskId || null,
-            role: this.role(message.role),
+            role: message.role === Role.ROLE_AGENT ? "agent" : "user",
             metadata: message.metadata,
-            extensions: message.extensions.length > 0 ? messages.extensions : null,
+            extensions: message.extensions.length > 0 ? message.extensions : null,
         };
     }
 
@@ -116,9 +108,9 @@ export class FromProto {
             throw new Error("SendMessageRequest is missing 'request' field.");
         }
         return {
-            configuration: this.messageSendConfiguration(request.configuration),
+            configuration: request.configuration,
             message: this.message(request.request),
-            metadata: this.metadata(request.metadata),
+            metadata: request.metadata,
         };
     }
 }

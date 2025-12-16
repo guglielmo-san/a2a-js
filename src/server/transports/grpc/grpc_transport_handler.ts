@@ -3,25 +3,31 @@ import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, Dele
 import { Task as A2ATask, MessageSendParams} from '../../../types.js';
 import { Empty } from '../../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../../request_handler/a2a_request_handler.js';
+import { FromProto } from '../../../grpc/utils/proto_type_converter.js';
 
 export function createGRPCHandler(requestHandler: A2ARequestHandler): A2AServiceServer {
     return {
-    sendMessage(call: grpc.ServerUnaryCall<SendMessageRequest, SendMessageResponse>, callback: grpc.sendUnaryData<SendMessageResponse>): void {
+    async sendMessage(call: grpc.ServerUnaryCall<SendMessageRequest, SendMessageResponse>, callback: grpc.sendUnaryData<SendMessageResponse>): Promise<void> {
         const request: SendMessageRequest = call.request;
 
         console.log("Received message:", request);
 
-        const params: MessageSendParams = {
-            message: {...request.request, kind: 'message'},
-            configuration: request.configuration,
-            metadata: request.metadata
-        }
-        const task = requestHandler.sendMessage(params);
+        const params: MessageSendParams = FromProto.messageSendParams(request);
+        const task = await requestHandler.sendMessage(params);
 
         const response: SendMessageResponse = {
-        'task': Task.fromJSON(task)
+            payload: {
+                $case: 'task',
+                value: {
+                    id: (task as A2ATask).id,
+                    contextId: task.contextId,
+                    status: undefined,
+                    artifacts: [],
+                    history: [],
+                    metadata: {},
+                },
+            },
         };
-
         callback(null, response);
     },
     sendStreamingMessage(call: grpc.ServerWritableStream<SendMessageRequest, StreamResponse>): void {
