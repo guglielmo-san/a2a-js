@@ -1,5 +1,6 @@
 version: v2
 modules:
-  - path: . # Path to where your 'a2a.proto' lives relative to this file
+  - path: .
+    name: buf.build/guglielmoc/a2a-js
 deps:
   - buf.build/googleapis/googleapis
