@@ -15,6 +15,7 @@ import {
   TaskQueryParams,
   TaskStatusUpdateEvent,
 } from '../../src/types.js';
+import { ServerCallContext } from '../../src/server/context.js';
 import { AgentExecutor } from '../../src/server/agent_execution/agent_executor.js';
 import { TaskStore } from '../../src/server/store.js';
 import {
@@ -82,9 +83,10 @@ describe('RequestHandlerInterceptor', () => {
       ...agentCard,
       capabilities: { ...agentCard.capabilities, streaming: false },
     };
+    const context: ServerCallContext = new ServerCallContext();
     defaultRequestHandler.getAuthenticatedExtendedAgentCard.resolves(extendedCard);
-    const result = await interceptor.getAuthenticatedExtendedAgentCard();
-    expect(defaultRequestHandler.getAuthenticatedExtendedAgentCard.calledOnce).to.be.true;
+    const result = await interceptor.getAuthenticatedExtendedAgentCard(context);
+    expect(defaultRequestHandler.getAuthenticatedExtendedAgentCard.calledOnceWith(context)).to.be.true;
     expect(result).to.deep.equal(extendedCard);
   });
 

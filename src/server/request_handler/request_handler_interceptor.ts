@@ -70,7 +70,8 @@ export class RequestHandlerInterceptor implements A2ARequestHandler {
     return this.executeWithInterceptors(
       { method: 'getAuthenticatedExtendedAgentCard' },
       context,
-      this.requestHandler.getAuthenticatedExtendedAgentCard.bind(this.requestHandler)
+      (_, context) =>
+        this.requestHandler.getAuthenticatedExtendedAgentCard(context)
     );
   }
 
