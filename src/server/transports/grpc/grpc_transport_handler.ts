@@ -15,6 +15,8 @@ import {
   FileWithBytes,
   FileWithUri,
   DeleteTaskPushNotificationConfigParams,
+  ListTaskPushNotificationConfigParams,
+  GetTaskPushNotificationConfigParams,
 } from '../../../types.js';
 
 export class gRpcTransportHandler {
@@ -119,22 +121,21 @@ export class gRpcTransportHandler {
        * Lists all push notification configurations for a task.
        */
       async listTaskPushNotificationConfigs(
-        taskId: string,
+        params: ListTaskPushNotificationConfigParams,
         context: ServerCallContext
       ): Promise<TaskPushNotificationConfig[]> {
-        return this.requestHandler.listTaskPushNotificationConfigs({ id: taskId }, context);
+        return this.requestHandler.listTaskPushNotificationConfigs(params, context);
       }
     
       /**
        * Gets a specific push notification configuration.
        */
       async getTaskPushNotificationConfig(
-        taskId: string,
-        configId: string,
+        params: GetTaskPushNotificationConfigParams,
         context: ServerCallContext
       ): Promise<TaskPushNotificationConfig> {
         return this.requestHandler.getTaskPushNotificationConfig(
-          { id: taskId, pushNotificationConfigId: configId },
+          params,
           context
         );
       }

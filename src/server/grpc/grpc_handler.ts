@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, DeleteTaskPushNotificationConfigRequest, GetExtendedAgentCardRequest, GetTaskPushNotificationConfigRequest, GetTaskRequest, ListTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigResponse, ListTasksRequest, ListTasksResponse, Message, SendMessageRequest, SendMessageResponse, SetTaskPushNotificationConfigRequest, StreamResponse, SubscribeToTaskRequest, Task, TaskPushNotificationConfig } from '../../grpc/a2a.js';
-import { Task as A2ATask, DeleteTaskPushNotificationConfigParams, MessageSendParams} from '../../types.js';
+import { Task as A2ATask, DeleteTaskPushNotificationConfigParams, GetTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams, MessageSendParams, TaskPushNotificationConfig as TaskPushNotificationConfigInternal } from '../../types.js';
 import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
 import { FromProto, ToProto } from '../../grpc/utils/proto_type_converter.js';
@@ -84,17 +84,56 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         callback(a2aError, null);
       }
     },
-    getAgentCard(call: grpc.ServerUnaryCall<Empty, Empty>, callback: grpc.sendUnaryData<Empty>): void {
-      throw new Error('Method not implemented.');
-    },
-    listTaskPushNotificationConfig(
+    async listTaskPushNotificationConfig(
       call: grpc.ServerUnaryCall<
         ListTaskPushNotificationConfigRequest,
         ListTaskPushNotificationConfigResponse
       >,
       callback: grpc.sendUnaryData<ListTaskPushNotificationConfigResponse>
-    ): void {
-      throw new Error('Method not implemented.');
+    ): Promise<void> {
+      try {
+        const context = await buildContext(call, options.userBuilder);
+        const params: ListTaskPushNotificationConfigParams = FromProto.listTaskPushNotificationConfigParams(call.request);
+        const listTaskPushNotificationConfigs = await grpcTransportHandler.listTaskPushNotificationConfigs(params, context);
+        const response = ToProto.listTaskPushNotificationConfigs(listTaskPushNotificationConfigs);
+        callback(null, response);
+      } catch (error) {
+        const a2aError = error instanceof A2AError ? error
+        : A2AError.internalError(error instanceof Error ? error.message : 'Internal server error');
+        callback(a2aError, null);
+      }
+    },
+    async setTaskPushNotificationConfig(
+      call: grpc.ServerUnaryCall<SetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>,
+      callback: grpc.sendUnaryData<TaskPushNotificationConfig>
+    ): Promise<void> {
+      try {
+        const context = await buildContext(call, options.userBuilder);
+        const params: TaskPushNotificationConfigInternal = FromProto.setTaskPushNotificationConfigParams(call.request);
+        const taskPushNotificationConfig = await grpcTransportHandler.setTaskPushNotificationConfig(params, context);
+        const response = ToProto.taskPushNotificationConfig(taskPushNotificationConfig);
+        callback(null, response);
+      } catch (error) {
+        const a2aError = error instanceof A2AError ? error
+        : A2AError.internalError(error instanceof Error ? error.message : 'Internal server error');
+        callback(a2aError, null);
+      }
+    },
+    async getTaskPushNotificationConfig(
+      call: grpc.ServerUnaryCall<GetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>,
+      callback: grpc.sendUnaryData<TaskPushNotificationConfig>
+    ): Promise<void> {
+      try {
+        const context = await buildContext(call, options.userBuilder);
+        const params: GetTaskPushNotificationConfigParams = FromProto.getTaskPushNotificationConfigParams(call.request);
+        const taskPushNotificationConfig = await grpcTransportHandler.getTaskPushNotificationConfig(params, context);
+        const response = ToProto.taskPushNotificationConfig(taskPushNotificationConfig);
+        callback(null, response);
+      } catch (error) {
+        const a2aError = error instanceof A2AError ? error
+        : A2AError.internalError(error instanceof Error ? error.message : 'Internal server error');
+        callback(a2aError, null);
+      }
     },
     listTasks(
       call: grpc.ServerUnaryCall<ListTasksRequest, ListTasksResponse>,
@@ -106,18 +145,6 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
       throw new Error('Method not implemented.');
     },
     cancelTask(call: grpc.ServerUnaryCall<CancelTaskRequest, Task>, callback: grpc.sendUnaryData<Task>): void {
-      throw new Error('Method not implemented.');
-    },
-    setTaskPushNotificationConfig(
-      call: grpc.ServerUnaryCall<SetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>,
-      callback: grpc.sendUnaryData<TaskPushNotificationConfig>
-    ): void {
-      throw new Error('Method not implemented.');
-    },
-    getTaskPushNotificationConfig(
-      call: grpc.ServerUnaryCall<GetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>,
-      callback: grpc.sendUnaryData<TaskPushNotificationConfig>
-    ): void {
       throw new Error('Method not implemented.');
     },
     getExtendedAgentCard(

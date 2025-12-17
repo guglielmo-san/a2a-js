@@ -43,27 +43,71 @@ import {
     TaskStatus,
     TaskStatusUpdateEvent,
     DeleteTaskPushNotificationConfigRequest,
+    ListTaskPushNotificationConfigRequest,
+    SetTaskPushNotificationConfigRequest,
+    ListTaskPushNotificationConfigResponse,
 } from '../a2a.js';
+
+const TASK_ID_REGEX = /tasks\/([^/]+)/;
+const CONFIG_ID_REGEX = /pushNotificationConfigs\/([^/]*)/;
+
 /**
  * Converts proto types to internal types.
  */
 export class FromProto {
+    private static _getTaskIdFromName(name: string): string {
+        const match = name.match(TASK_ID_REGEX);
+        if (!match) {
+            throw new Error(
+                `Invalid or missing task ID in name: "${name}"`
+            );
+        }
+        return match[1];
+    }
+
+    private static _getPushNotificationConfigIdFromName(name: string): string {
+        const match = name.match(CONFIG_ID_REGEX);
+        if (!match || match.length < 2) {
+            throw new Error(
+                `Invalid or missing config ID in name: "${name}"`
+            );
+        }
+        return match[1];
+    }
+
+    static getTaskPushNotificationConfigParams(
+        request: GetTaskPushNotificationConfigRequest
+    ): types.GetTaskPushNotificationConfigParams {
+        return {
+            id: this._getTaskIdFromName(request.name),
+            pushNotificationConfigId: this._getPushNotificationConfigIdFromName(request.name),
+        };
+    }
+
+    static listTaskPushNotificationConfigParams(
+        request: ListTaskPushNotificationConfigRequest
+    ): types.ListTaskPushNotificationConfigParams {
+        return {
+            id: this._getTaskIdFromName(request.parent),
+        };
+    }
+
+    static setTaskPushNotificationConfigParams(
+        request: SetTaskPushNotificationConfigRequest
+    ): types.TaskPushNotificationConfig {
+        return {
+            taskId: this._getTaskIdFromName(request.parent),
+            pushNotificationConfig: this.pushNotificationConfig(request.config.pushNotificationConfig),
+        };
+    }
+
     static deleteTaskPushNotificationConfigParams(
         request: DeleteTaskPushNotificationConfigRequest
     ): types.DeleteTaskPushNotificationConfigParams {
         const name = request.name;
-        const regex = /^tasks\/([^/]+)\/pushNotificationConfigs\/([^/]+)$/;
-        const match = name.match(regex);
-
-        if (!match) {
-            throw new Error(
-                `Invalid name format for DeleteTaskPushNotificationConfigRequest: ${name}. Expected format: tasks/{task_id}/pushNotificationConfigs/{config_id}`
-            );
-        }
-
         return {
-            id: match[1],
-            pushNotificationConfigId: match[2],
+            id: this._getTaskIdFromName(name),
+            pushNotificationConfigId: this._getPushNotificationConfigIdFromName(name),
         };
     }
 
@@ -161,6 +205,38 @@ export class FromProto {
 }
 
 export class ToProto {
+
+    static listTaskPushNotificationConfigs(config: types.TaskPushNotificationConfig[]): ListTaskPushNotificationConfigResponse {
+        return {
+            configs: config.map(c => this.taskPushNotificationConfig(c)),
+            nextPageToken: '',
+        };
+    }
+
+    static taskPushNotificationConfig(config: types.TaskPushNotificationConfig): TaskPushNotificationConfig {
+        return {
+            name: `tasks/${config.taskId}/pushNotificationConfigs/${config.pushNotificationConfig.id || ''}`,
+            pushNotificationConfig: this.pushNotificationConfig(config.pushNotificationConfig)  
+        };
+    }
+
+    static pushNotificationConfig(config: types.PushNotificationConfig): PushNotificationConfig {
+        return {
+            id: config.id ?? '',
+            url: config.url,
+            token: config.token ?? '',
+            authentication: config.authentication
+                ? this.authenticationInfo(config.authentication)
+                : undefined
+        };
+    }
+
+    static authenticationInfo(authInfo: types.PushNotificationAuthenticationInfo): AuthenticationInfo {
+        return {
+            schemes: authInfo.schemes,
+            credentials: authInfo.credentials ?? '',
+        };
+    }
 
     static messageStreamResult(event: types.Message | types.Task | types.TaskStatusUpdateEvent | types.TaskArtifactUpdateEvent): StreamResponse  {
         if (event.kind === "message") {
