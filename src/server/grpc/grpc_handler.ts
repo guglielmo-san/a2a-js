@@ -3,7 +3,7 @@ import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, Dele
 import { Task as A2ATask, MessageSendParams} from '../../types.js';
 import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
-import { FromProto } from '../../grpc/utils/proto_type_converter.js';
+import { FromProto, ToProto } from '../../grpc/utils/proto_type_converter.js';
 import { UserBuilder } from '../express/common.js';
 import { gRpcTransportHandler } from '../transports/grpc/grpc_transport_handler.js';
 import { ServerCallContext } from '../context.js';
@@ -38,7 +38,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         const context = await buildContext(call, options.userBuilder);
         const params: MessageSendParams = FromProto.messageSendParams(call.request);
         const task = await grpcTransportHandler.sendMessage(params, context);
-        const response = ToProto.sendMessageResponse(task);
+        const response = ToProto.messageSendResult(task);
         callback(null, response);
       } catch (error) {
         callback({
