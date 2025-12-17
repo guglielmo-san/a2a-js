@@ -14,6 +14,7 @@ import {
   AgentCard,
   FileWithBytes,
   FileWithUri,
+  DeleteTaskPushNotificationConfigParams,
 } from '../../../types.js';
 
 export class gRpcTransportHandler {
@@ -142,12 +143,11 @@ export class gRpcTransportHandler {
        * Deletes a push notification configuration.
        */
       async deleteTaskPushNotificationConfig(
-        taskId: string,
-        configId: string,
+        params: DeleteTaskPushNotificationConfigParams,
         context: ServerCallContext
       ): Promise<void> {
         await this.requestHandler.deleteTaskPushNotificationConfig(
-          { id: taskId, pushNotificationConfigId: configId },
+          params,
           context
         );
       }

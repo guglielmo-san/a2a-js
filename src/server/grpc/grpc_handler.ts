@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, DeleteTaskPushNotificationConfigRequest, GetExtendedAgentCardRequest, GetTaskPushNotificationConfigRequest, GetTaskRequest, ListTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigResponse, ListTasksRequest, ListTasksResponse, Message, SendMessageRequest, SendMessageResponse, SetTaskPushNotificationConfigRequest, StreamResponse, SubscribeToTaskRequest, Task, TaskPushNotificationConfig } from '../../grpc/a2a.js';
-import { Task as A2ATask, MessageSendParams} from '../../types.js';
+import { Task as A2ATask, DeleteTaskPushNotificationConfigParams, MessageSendParams} from '../../types.js';
 import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
 import { FromProto, ToProto } from '../../grpc/utils/proto_type_converter.js';
@@ -9,6 +9,8 @@ import { gRpcTransportHandler } from '../transports/grpc/grpc_transport_handler.
 import { ServerCallContext } from '../context.js';
 import { Extensions } from '../../extensions.js';
 import { User, UnauthenticatedUser } from '../authentication/user.js';
+import { HTTP_EXTENSION_HEADER } from '../../constants.js';
+import { A2AError } from '../error.js';
 
 /**
  * Options for configuring the gRPC handler.
@@ -41,24 +43,46 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         const response = ToProto.messageSendResult(task);
         callback(null, response);
       } catch (error) {
-        callback({
-          code: grpc.status.INTERNAL,
-          message: error instanceof Error ? error.message : 'Internal Server Error',
-        });
+        const a2aError = error instanceof A2AError ? error
+        : A2AError.internalError(error instanceof Error ? error.message : 'Internal server error');
+        callback(a2aError, null);
       }
     },
 
-    sendStreamingMessage(call: grpc.ServerWritableStream<SendMessageRequest, StreamResponse>): void {
-      throw new Error('Method not implemented.');
+    async sendStreamingMessage(call: grpc.ServerWritableStream<SendMessageRequest, StreamResponse>): Promise<void> {
+      try {
+        const context = await buildContext(call, options.userBuilder);
+        const params: MessageSendParams = FromProto.messageSendParams(call.request);
+        const stream = await grpcTransportHandler.sendMessageStream(params, context);
+        for await (const responsePart of stream) {
+          const response = ToProto.messageStreamResult(responsePart);
+          call.write(response);
+        }
+      } catch (error) {
+        const a2aError = error instanceof A2AError ? error
+        : A2AError.internalError(error instanceof Error ? error.message : 'Internal server error');
+        call.emit('error', a2aError);
+      } finally {
+        call.end();
+      }
     },
     subscribeToTask(call: grpc.ServerWritableStream<SubscribeToTaskRequest, StreamResponse>): void {
       throw new Error('Method not implemented.');
     },
-    deleteTaskPushNotificationConfig(
+    async deleteTaskPushNotificationConfig(
       call: grpc.ServerUnaryCall<DeleteTaskPushNotificationConfigRequest, Empty>,
       callback: grpc.sendUnaryData<Empty>
-    ): void {
-      throw new Error('Method not implemented.');
+    ): Promise<void> {
+      try {
+        const context = await buildContext(call, options.userBuilder);
+        const params: DeleteTaskPushNotificationConfigParams = FromProto.deleteTaskPushNotificationConfigParams(call.request);
+        await grpcTransportHandler.deleteTaskPushNotificationConfig(params, context);
+        callback(null, null);
+      } catch (error) {
+        const a2aError = error instanceof A2AError ? error
+        : A2AError.internalError(error instanceof Error ? error.message : 'Internal server error');
+        callback(a2aError, null);
+      }
     },
     getAgentCard(call: grpc.ServerUnaryCall<Empty, Empty>, callback: grpc.sendUnaryData<Empty>): void {
       throw new Error('Method not implemented.');
@@ -105,12 +129,54 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
   };
 }
 
+const mapToError = (error: A2AError): Partial<grpc.ServerErrorResponse> => {
+    grpc.status
+    switch (error.code) {
+        case -32001:
+            return {
+                code: grpc.status.NOT_FOUND,
+                details: error.message,
+                metadata: undefined,
+            };
+        case -32002 || -32007 || -32008:
+            return {
+                code: grpc.status.FAILED_PRECONDITION,
+                details: error.message,
+                metadata: undefined,
+            };
+        case -32003 || -32004 || -32009:
+            return {
+                code: grpc.status.UNIMPLEMENTED,
+                details: error.message,
+                metadata: undefined,
+            };
+        case -32005:
+            return {
+                code: grpc.status.INVALID_ARGUMENT,
+                details: error.message,
+                metadata: undefined,
+            };
+        case -32006:
+            return {
+                code: grpc.status.INTERNAL,
+                details: error.message,
+                metadata: undefined,
+            };
+        case -32009:
+            return {
+                code: grpc.status.UNIMPLEMENTED,
+                details: error.message,
+                metadata: undefined,
+            };   
+    }
+}
+
 const buildContext = async (
     call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>,
     userBuilder: (call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>) => Promise<User | undefined>
   ): Promise<ServerCallContext> => {
     const user = await userBuilder(call);
-    const extensionHeader = call.metadata.get('x-a2a-extensions');
+    const extensionHeader = call.metadata.get(HTTP_EXTENSION_HEADER.toLowerCase());
     const extensionString = Array.isArray(extensionHeader) ? extensionHeader.join('') : extensionHeader;
 
     return new ServerCallContext(

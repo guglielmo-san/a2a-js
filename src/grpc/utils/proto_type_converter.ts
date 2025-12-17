@@ -42,11 +42,30 @@ import {
     TaskState,
     TaskStatus,
     TaskStatusUpdateEvent,
+    DeleteTaskPushNotificationConfigRequest,
 } from '../a2a.js';
 /**
  * Converts proto types to internal types.
  */
 export class FromProto {
+    static deleteTaskPushNotificationConfigParams(
+        request: DeleteTaskPushNotificationConfigRequest
+    ): types.DeleteTaskPushNotificationConfigParams {
+        const name = request.name;
+        const regex = /^tasks\/([^/]+)\/pushNotificationConfigs\/([^/]+)$/;
+        const match = name.match(regex);
+
+        if (!match) {
+            throw new Error(
+                `Invalid name format for DeleteTaskPushNotificationConfigRequest: ${name}. Expected format: tasks/{task_id}/pushNotificationConfigs/{config_id}`
+            );
+        }
+
+        return {
+            id: match[1],
+            pushNotificationConfigId: match[2],
+        };
+    }
 
     static message(message: Message): types.Message {
         return {
@@ -142,6 +161,61 @@ export class FromProto {
 }
 
 export class ToProto {
+
+    static messageStreamResult(event: types.Message | types.Task | types.TaskStatusUpdateEvent | types.TaskArtifactUpdateEvent): StreamResponse  {
+        if (event.kind === "message") {
+            return {
+                payload: {
+                    $case: 'msg',
+                    value: this.message(event),
+                },
+            };
+        } else if (event.kind === "task") {
+            return {
+                payload: {
+                    $case: 'task',
+                    value: this.task(event),
+                },
+            };
+        } else if (event.kind === "status-update") {
+            return {
+                payload: {
+                    $case: 'statusUpdate',
+                    value: this.taskStatusUpdate(event),
+                },
+            };
+        } else if (event.kind === "artifact-update") {
+            return {
+                payload: {
+                    $case: 'artifactUpdate',
+                    value: this.taskArtifactUpdate(event),
+                },
+            };
+        } else {
+            throw new Error("Invalid event type");
+        }
+    }
+
+    static taskStatusUpdate(event: types.TaskStatusUpdateEvent): TaskStatusUpdateEvent {
+        return {
+            taskId: event.taskId,
+            status: this.taskStatus(event.status),
+            contextId: event.contextId,
+            metadata: event.metadata,
+            final: event.final,
+        };
+    }
+
+    static taskArtifactUpdate(event: types.TaskArtifactUpdateEvent): TaskArtifactUpdateEvent {
+        return {
+            taskId: event.taskId,
+            artifact: this.artifact(event.artifact),
+            contextId: event.contextId,
+            metadata: event.metadata,
+            append: event.append ?? false,
+            lastChunk: event.lastChunk ?? false,
+        };
+    }
 
     static messageSendResult(params: types.Message | types.Task): SendMessageResponse {
         if (params.kind === "message") {
