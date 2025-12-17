@@ -9,7 +9,7 @@ import {
 import { agentCardHandler, jsonRpcHandler, UserBuilder } from '../../../server/express/index.js';
 import { SampleAgentExecutor } from './agent_executor.js';
 import { A2AServiceService } from '../../../grpc/a2a.js';
-import { createGRPCHandler } from '../../../server/transports/grpc/grpc_transport_handler.js';
+import { createGRPCHandler } from '../../../server/grpc/grpc_handler.js';
 
 // --- Server Setup ---
 

@@ -1,67 +1,154 @@
-import * as grpc from '@grpc/grpc-js';
-import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, DeleteTaskPushNotificationConfigRequest, GetExtendedAgentCardRequest, GetTaskPushNotificationConfigRequest, GetTaskRequest, ListTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigResponse, ListTasksRequest, ListTasksResponse, Message, SendMessageRequest, SendMessageResponse, SetTaskPushNotificationConfigRequest, StreamResponse, SubscribeToTaskRequest, Task, TaskPushNotificationConfig } from '../../../grpc/a2a.js';
-import { Task as A2ATask, MessageSendParams} from '../../../types.js';
-import { Empty } from '../../../grpc/google/protobuf/empty.js';
+import { A2AError } from '../../error.js';
 import { A2ARequestHandler } from '../../request_handler/a2a_request_handler.js';
-import { FromProto } from '../../../grpc/utils/proto_type_converter.js';
+import { ServerCallContext } from '../../context.js';
+import {
+  Message,
+  Task,
+  TaskStatusUpdateEvent,
+  TaskArtifactUpdateEvent,
+  MessageSendParams,
+  TaskPushNotificationConfig,
+  TaskQueryParams,
+  TaskIdParams,
+  Part,
+  AgentCard,
+  FileWithBytes,
+  FileWithUri,
+} from '../../../types.js';
 
-export function createGRPCHandler(requestHandler: A2ARequestHandler): A2AServiceServer {
-    return {
-    async sendMessage(call: grpc.ServerUnaryCall<SendMessageRequest, SendMessageResponse>, callback: grpc.sendUnaryData<SendMessageResponse>): Promise<void> {
-        const request: SendMessageRequest = call.request;
+export class gRpcTransportHandler {
+    private requestHandler: A2ARequestHandler;
 
-        console.log("Received message:", request);
-
-        const params: MessageSendParams = FromProto.messageSendParams(request);
-        const task = await requestHandler.sendMessage(params);
-
-        const response: SendMessageResponse = {
-            payload: {
-                $case: 'task',
-                value: {
-                    id: (task as A2ATask).id,
-                    contextId: task.contextId,
-                    status: undefined,
-                    artifacts: [],
-                    history: [],
-                    metadata: {},
-                },
-            },
-        };
-        callback(null, response);
-    },
-    sendStreamingMessage(call: grpc.ServerWritableStream<SendMessageRequest, StreamResponse>): void {
-        throw new Error("Method not implemented.");
-    },
-    subscribeToTask(call: grpc.ServerWritableStream<SubscribeToTaskRequest, StreamResponse>): void {
-        throw new Error("Method not implemented.");
-    },
-    deleteTaskPushNotificationConfig(call: grpc.ServerUnaryCall<DeleteTaskPushNotificationConfigRequest, Empty>, callback: grpc.sendUnaryData<Empty>): void {
-        throw new Error("Method not implemented.");
-    },
-    getAgentCard(call: grpc.ServerUnaryCall<Empty, Empty>, callback: grpc.sendUnaryData<Empty>): void {
-        throw new Error("Method not implemented.");
-    },
-    listTaskPushNotificationConfig(call: grpc.ServerUnaryCall<ListTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigResponse>, callback: grpc.sendUnaryData<ListTaskPushNotificationConfigResponse>): void {
-        throw new Error("Method not implemented.");
-    },
-    listTasks(call: grpc.ServerUnaryCall<ListTasksRequest, ListTasksResponse>, callback: grpc.sendUnaryData<ListTasksResponse>): void {
-        throw new Error("Method not implemented.");
-    },
-    getTask(call: grpc.ServerUnaryCall<GetTaskRequest, Task>, callback: grpc.sendUnaryData<Task>): void {
-        throw new Error("Method not implemented.");
-    },
-    cancelTask(call: grpc.ServerUnaryCall<CancelTaskRequest, Task>, callback: grpc.sendUnaryData<Task>): void {
-        throw new Error("Method not implemented.");
-    },
-    setTaskPushNotificationConfig(call: grpc.ServerUnaryCall<SetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>, callback: grpc.sendUnaryData<TaskPushNotificationConfig>): void {
-        throw new Error("Method not implemented.");
-    },
-    getTaskPushNotificationConfig(call: grpc.ServerUnaryCall<GetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>, callback: grpc.sendUnaryData<TaskPushNotificationConfig>): void {
-        throw new Error("Method not implemented.");
-    },
-    getExtendedAgentCard(call: grpc.ServerUnaryCall<GetExtendedAgentCardRequest, AgentCard>, callback: grpc.sendUnaryData<AgentCard>): void {
-        throw new Error("Method not implemented.");
+    constructor(requestHandler: A2ARequestHandler) {
+        this.requestHandler = requestHandler;
     }
-    };
+
+      /**
+       * Gets the agent card (for capability checks).
+       */
+      async getAgentCard(): Promise<AgentCard> {
+        return this.requestHandler.getAgentCard();
+      }
+    
+      /**
+       * Gets the authenticated extended agent card.
+       */
+      async getAuthenticatedExtendedAgentCard(): Promise<AgentCard> {
+        return this.requestHandler.getAuthenticatedExtendedAgentCard();
+      }
+    
+      /**
+       * Sends a message to the agent.
+       * Accepts both snake_case and camelCase input, returns camelCase.
+       */
+      async sendMessage(
+        params: MessageSendParams,
+        context: ServerCallContext
+      ): Promise<Message | Task> {
+        return this.requestHandler.sendMessage(params, context);
+      }
+    
+      /**
+       * Sends a message with streaming response.
+       * Accepts both snake_case and camelCase input, returns camelCase stream.
+       * @throws {A2AError} UnsupportedOperation if streaming not supported
+       */
+      async sendMessageStream(
+        params: MessageSendParams,
+        context: ServerCallContext
+      ): Promise<
+        AsyncGenerator<
+          Message | Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent,
+          void,
+          undefined
+        >
+      > {
+        return this.requestHandler.sendMessageStream(params, context);
+      }
+    
+      /**
+       * Gets a task by ID.
+       * Validates historyLength parameter if provided.
+       */
+      async getTask(
+        taskId: string,
+        context: ServerCallContext,
+        historyLength?: unknown
+      ): Promise<Task> {
+        const params: TaskQueryParams = { id: taskId };
+        return this.requestHandler.getTask(params, context);
+      }
+    
+      /**
+       * Cancels a task.
+       */
+      async cancelTask(taskId: string, context: ServerCallContext): Promise<Task> {
+        const params: TaskIdParams = { id: taskId };
+        return this.requestHandler.cancelTask(params, context);
+      }
+    
+      /**
+       * Resubscribes to task updates.
+       * Returns camelCase stream of task updates.
+       * @throws {A2AError} UnsupportedOperation if streaming not supported
+       */
+      async resubscribe(
+        taskId: string,
+        context: ServerCallContext
+      ): Promise<
+        AsyncGenerator<Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent, void, undefined>
+      > {
+        const params: TaskIdParams = { id: taskId };
+        return this.requestHandler.resubscribe(params, context);
+      }
+    
+      /**
+       * Sets a push notification configuration.
+       * Accepts both snake_case and camelCase input, returns camelCase.
+       * @throws {A2AError} PushNotificationNotSupported if push notifications not supported
+       */
+      async setTaskPushNotificationConfig(
+        config: TaskPushNotificationConfig,
+        context: ServerCallContext
+      ): Promise<TaskPushNotificationConfig> {
+        return this.requestHandler.setTaskPushNotificationConfig(config, context);
+      }
+    
+      /**
+       * Lists all push notification configurations for a task.
+       */
+      async listTaskPushNotificationConfigs(
+        taskId: string,
+        context: ServerCallContext
+      ): Promise<TaskPushNotificationConfig[]> {
+        return this.requestHandler.listTaskPushNotificationConfigs({ id: taskId }, context);
+      }
+    
+      /**
+       * Gets a specific push notification configuration.
+       */
+      async getTaskPushNotificationConfig(
+        taskId: string,
+        configId: string,
+        context: ServerCallContext
+      ): Promise<TaskPushNotificationConfig> {
+        return this.requestHandler.getTaskPushNotificationConfig(
+          { id: taskId, pushNotificationConfigId: configId },
+          context
+        );
+      }
+    
+      /**
+       * Deletes a push notification configuration.
+       */
+      async deleteTaskPushNotificationConfig(
+        taskId: string,
+        configId: string,
+        context: ServerCallContext
+      ): Promise<void> {
+        await this.requestHandler.deleteTaskPushNotificationConfig(
+          { id: taskId, pushNotificationConfigId: configId },
+          context
+        );
+      }
 }
