@@ -1,12 +1,11 @@
 import * as grpc from '@grpc/grpc-js';
-import { AgentCard, AGENT_CARD_PATH } from '../../../index.js';
+import { AgentCard } from '../../../index.js';
 import {
   InMemoryTaskStore,
   TaskStore,
   AgentExecutor,
   DefaultRequestHandler,
 } from '../../../server/index.js';
-import { agentCardHandler, jsonRpcHandler, UserBuilder } from '../../../server/express/index.js';
 import { SampleAgentExecutor } from './agent_executor.js';
 import { A2AServiceService } from '../../../grpc/a2a.js';
 import { createGRPCHandler } from '../../../server/grpc/grpc_handler.js';
@@ -57,9 +56,9 @@ async function main() {
 
   const server = new grpc.Server();
   server.addService(A2AServiceService, createGRPCHandler(requestHandler));
-  server.bindAsync("localhost:8080", grpc.ServerCredentials.createInsecure(), () => {
-  console.log("Server running at http://localhost:8080");
-});
+  server.bindAsync('localhost:8080', grpc.ServerCredentials.createInsecure(), () => {
+    console.log('Server running at http://localhost:8080');
+  });
 }
 
 main().catch(console.error);
