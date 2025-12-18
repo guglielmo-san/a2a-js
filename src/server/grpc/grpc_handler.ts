@@ -66,7 +66,6 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         const context = await buildContext(call, options.userBuilder);
         const params = parser(call.request);
         const result = await handler(params, context);
-        
         call.sendMetadata(buildMetadata(context));
         callback(null, converter(result));
       } catch (error) {
@@ -83,7 +82,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.messageSendParams,
-        grpcTransportHandler.sendMessage,
+        (params, context) => grpcTransportHandler.sendMessage(params, context),
         ToProto.messageSendResult
       );
     },
@@ -148,7 +147,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.deleteTaskPushNotificationConfigParams,
-        grpcTransportHandler.deleteTaskPushNotificationConfig,
+        grpcTransportHandler.deleteTaskPushNotificationConfig.bind(grpcTransportHandler),
         () => ({})
       );
     },
@@ -163,7 +162,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.listTaskPushNotificationConfigParams,
-        grpcTransportHandler.listTaskPushNotificationConfigs,
+        grpcTransportHandler.listTaskPushNotificationConfigs.bind(grpcTransportHandler),
         ToProto.listTaskPushNotificationConfigs
       );
     },
@@ -178,7 +177,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.setTaskPushNotificationConfigParams,
-        grpcTransportHandler.setTaskPushNotificationConfig,
+        grpcTransportHandler.setTaskPushNotificationConfig.bind(grpcTransportHandler),
         ToProto.taskPushNotificationConfig
       );
     },
@@ -190,7 +189,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.getTaskPushNotificationConfigParams,
-        grpcTransportHandler.getTaskPushNotificationConfig,
+        grpcTransportHandler.getTaskPushNotificationConfig.bind(grpcTransportHandler),
         ToProto.taskPushNotificationConfig
       );
     },
@@ -202,7 +201,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.taskQueryParams,
-        grpcTransportHandler.getTask,
+        grpcTransportHandler.getTask.bind(grpcTransportHandler),
         ToProto.task
       );
     },
@@ -214,7 +213,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.taskIdParams,
-        grpcTransportHandler.cancelTask,
+        grpcTransportHandler.cancelTask.bind(grpcTransportHandler),
         ToProto.task
       );
     },
@@ -222,11 +221,11 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
       call: grpc.ServerUnaryCall<GetAgentCardRequest, AgentCard>,
       callback: grpc.sendUnaryData<AgentCard>
     ): Promise<void> {
-      return wrapUnary(
+      return await wrapUnary(
         call,
         callback,
         () => ({}),
-        (_, context) => this.grpcTransportHandler.getAgentCard(context),
+        (_params, _context) => grpcTransportHandler.getAgentCard(),
         ToProto.agentCard
       );
     },

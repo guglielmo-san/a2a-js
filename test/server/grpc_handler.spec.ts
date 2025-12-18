@@ -1,9 +1,12 @@
 import { describe, it, beforeEach, afterEach, assert, expect, vi, Mock } from 'vitest';
 import * as grpc from '@grpc/grpc-js';
+import * as proto from '../../src/grpc/a2a.js';
 import { A2AError, A2ARequestHandler } from '../../src/server/index.js';
 import { grpcHandler } from '../../src/server/grpc/grpc_handler.js';
-import { AgentCard, HTTP_EXTENSION_HEADER, Task } from '../../src/index.js';
+import { AgentCard, HTTP_EXTENSION_HEADER, MessageSendParams, Task } from '../../src/index.js';
+import { FromProto, ToProto } from '../../src/grpc/utils/proto_type_converter.js';
 
+vi.mock('../../src/grpc/utils/proto_type_converter.js');
 
 describe('grpcHandler', () => {
   let mockRequestHandler: A2ARequestHandler;
@@ -31,7 +34,7 @@ describe('grpcHandler', () => {
   };
 
   // Helper to create a mock gRPC Unary Call
-  const createMockUnaryCall = (request: any, metadataValues: Record<string, string> = {}) => {
+  const createMockUnaryCall = (request: any, metadataValues: Record<string, string> = {}): grpc.ServerUnaryCall<any, any> => {
     const metadata = new grpc.Metadata();
     Object.entries(metadataValues).forEach(([k, v]) => metadata.set(k, v));
     return {
@@ -56,8 +59,8 @@ describe('grpcHandler', () => {
   beforeEach(() => {
     mockRequestHandler = {
       getAgentCard: vi.fn().mockResolvedValue(testAgentCard),
-      getAuthenticatedExtendedAgentCard: vi.fn().mockResolvedValue(testAgentCard),
-      sendMessage: vi.fn(),
+      getAuthenticatedExtendedAgentCard: vi.fn(),
+      sendMessage: vi.fn().mockResolvedValue(testTask),
       sendMessageStream: vi.fn(),
       getTask: vi.fn(),
       cancelTask: vi.fn(),
@@ -66,7 +69,7 @@ describe('grpcHandler', () => {
       listTaskPushNotificationConfigs: vi.fn(),
       deleteTaskPushNotificationConfig: vi.fn(),
       resubscribe: vi.fn(),
-    } as unknown as A2ARequestHandler;
+    };
 
     handler = grpcHandler({
       requestHandler: mockRequestHandler,
@@ -82,19 +85,22 @@ describe('grpcHandler', () => {
     it('should return agent card via gRPC callback', async () => {
       const call = createMockUnaryCall({});
       const callback = vi.fn();
+      const mockProtoAgentCard = { name: 'Proto Test Agent' } as proto.AgentCard;
+
+      (ToProto.agentCard as Mock).mockReturnValue(mockProtoAgentCard);
 
       await handler.getAgentCard(call, callback);
 
-      expect(mockRequestHandler.getAuthenticatedExtendedAgentCard).toHaveBeenCalled();
-      // Verify callback: callback(error, response)
+      expect(mockRequestHandler.getAgentCard).toHaveBeenCalled();
+      expect(ToProto.agentCard).toHaveBeenCalledWith(testAgentCard);
       const [err, response] = callback.mock.calls[0];
       assert.isNull(err);
-      assert.equal(response.name, testAgentCard.name);
+      assert.deepEqual(response, mockProtoAgentCard);
       expect(call.sendMetadata).toHaveBeenCalled();
     });
 
     it('should return gRPC error code on failure', async () => {
-      (mockRequestHandler.getAuthenticatedExtendedAgentCard as Mock).mockRejectedValue(
+      (mockRequestHandler.getAgentCard as Mock).mockRejectedValue(
         new A2AError(-32001, 'Not Found')
       );
       const call = createMockUnaryCall({});
@@ -110,15 +116,19 @@ describe('grpcHandler', () => {
 
   describe('sendMessage', () => {
     it('should successfully send a message and return a task', async () => {
-      (mockRequestHandler.sendMessage as Mock).mockResolvedValue(testTask);
       const call = createMockUnaryCall({ message: { role: 'user', parts: [] } });
       const callback = vi.fn();
 
+      const messageSendParams = { message: { role: 'user' } } as MessageSendParams
+      (FromProto.messageSendParams as Mock).mockReturnValue(messageSendParams);
+      const sendMessageResponse = { payload: { $case: 'task', value: { id: 'task-1' } } as proto.SendMessageResponse };
+      (ToProto.messageSendResult as Mock).mockReturnValue(sendMessageResponse);
       await handler.sendMessage(call, callback);
 
       const [err, response] = callback.mock.calls[0];
       assert.isNull(err);
-      assert.equal(response.id, testTask.id);
+      assert.equal(response.payload.$case, 'task');
+      assert.equal(response.payload.value.id, testTask.id);
     });
   });
 
