@@ -5,6 +5,8 @@ import { A2AError, A2ARequestHandler } from '../../src/server/index.js';
 import { grpcHandler } from '../../src/server/grpc/grpc_handler.js';
 import { AgentCard, HTTP_EXTENSION_HEADER, MessageSendParams, Task } from '../../src/index.js';
 import { FromProto, ToProto } from '../../src/grpc/utils/proto_type_converter.js';
+import { context } from 'esbuild';
+import test from 'node:test';
 
 vi.mock('../../src/grpc/utils/proto_type_converter.js');
 
@@ -62,7 +64,7 @@ describe('grpcHandler', () => {
       getAuthenticatedExtendedAgentCard: vi.fn(),
       sendMessage: vi.fn().mockResolvedValue(testTask),
       sendMessageStream: vi.fn(),
-      getTask: vi.fn(),
+      getTask: vi.fn().mockResolvedValue(testTask),
       cancelTask: vi.fn(),
       setTaskPushNotificationConfig: vi.fn(),
       getTaskPushNotificationConfig: vi.fn(),
@@ -163,21 +165,41 @@ describe('grpcHandler', () => {
   });
 
   describe('Extensions (Metadata) Handling', () => {
-    it('should extract extensions from metadata and pass to context', async () => {
-      (mockRequestHandler.getTask as Mock).mockResolvedValue(testTask);
-      
+    it('should extract extensions from metadata and pass to context', async () => {      
       // Mocking the header 'x-a2a-extension'
       const call = createMockUnaryCall({ id: 'task-1' }, {
         [HTTP_EXTENSION_HEADER.toLowerCase()]: 'extension-v1'
       });
       const callback = vi.fn();
 
+      (FromProto.taskQueryParams as Mock).mockReturnValue({ id: 'task-1' });
+      (ToProto.task as Mock).mockReturnValue({ id: 'task-1' , contextId: 'ctx-1'});
       await handler.getTask(call, callback);
 
-      // Verify that the handler passed the parsed extension to the RequestHandler
       const contextArg = (mockRequestHandler.getTask as Mock).mock.calls[0][1];
-      // This assumes your ServerCallContext holds the extensions
       expect(contextArg).toBeDefined();
+      expect(contextArg.requestedExtensions).toEqual(['extension-v1']);
+    });
+
+    it('should return activated extensions in context through metadata', async () => {      
+      // Mocking the header 'x-a2a-extension'
+      const call = createMockUnaryCall({ id: 'task-1' }, {
+        [HTTP_EXTENSION_HEADER.toLowerCase()]: 'extension-v1'
+      });
+      const callback = vi.fn();
+
+      (mockRequestHandler.getTask as Mock).mockImplementation(async (_params, context) => {
+        context.activatedExtensions = ['extension-v1'];
+        return testTask;
+       });
+
+      (FromProto.taskQueryParams as Mock).mockReturnValue({ id: 'task-1' });
+      (ToProto.task as Mock).mockReturnValue({ id: 'task-1' , contextId: 'ctx-1'});
+      await handler.getTask(call, callback);
+
+      const metadata = (call.sendMetadata as Mock).mock.calls[0];
+      expect(metadata).toBeDefined();
+      console.log(metadata);
     });
   });
 });

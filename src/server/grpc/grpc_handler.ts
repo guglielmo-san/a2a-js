@@ -201,7 +201,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.taskQueryParams,
-        grpcTransportHandler.getTask.bind(grpcTransportHandler),
+        (params, context) => grpcTransportHandler.getTask(params, context),
         ToProto.task
       );
     },
