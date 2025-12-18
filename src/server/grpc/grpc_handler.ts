@@ -266,8 +266,8 @@ const buildContext = async (
   userBuilder: gRpcHandlerOptions['userBuilder']
 ): Promise<ServerCallContext> => {
   const user = await userBuilder(call);
-  const extensionHeader = call.metadata.get(HTTP_EXTENSION_HEADER.toLowerCase());
-  const extensionString = Array.isArray(extensionHeader) ? extensionHeader.join(',') : (extensionHeader as string);
+  const extensionValues = call.metadata.get(HTTP_EXTENSION_HEADER.toLowerCase());
+  const extensionString = extensionValues.map(v => v.toString()).join(',');
 
   return new ServerCallContext(
     Extensions.parseServiceParameter(extensionString),
