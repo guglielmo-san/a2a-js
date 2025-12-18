@@ -18,13 +18,8 @@ import {
   TaskSubscriptionRequest,
 } from '../../grpc/a2a.js';
 import {
-  DeleteTaskPushNotificationConfigParams,
-  GetTaskPushNotificationConfigParams,
-  ListTaskPushNotificationConfigParams,
   MessageSendParams,
   TaskIdParams,
-  TaskPushNotificationConfig as TaskPushNotificationConfigInternal,
-  TaskQueryParams,
 } from '../../types.js';
 import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
@@ -57,26 +52,40 @@ export interface gRpcHandlerOptions {
 export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
   const grpcTransportHandler = new gRpcTransportHandler(options.requestHandler);
 
+  /**
+   * Helper to wrap Unary calls with common logic (context, metadata, error handling)
+   */
+  const wrapUnary = async <TReq, TRes, TParams, TResult>(
+    call: grpc.ServerUnaryCall<TReq, TRes>,
+    callback: grpc.sendUnaryData<TRes>,
+    parser: (req: TReq) => TParams,
+    handler: (params: TParams, ctx: ServerCallContext) => Promise<TResult>,
+    converter: (res: TResult) => TRes
+  ) => {
+      try {
+        const context = await buildContext(call, options.userBuilder);
+        const params = parser(call.request);
+        const result = await handler(params, context);
+        
+        call.sendMetadata(buildMetadata(context));
+        callback(null, converter(result));
+      } catch (error) {
+        callback(mapToError(error), null);
+      }
+  };
+
   return {
     async sendMessage(
       call: grpc.ServerUnaryCall<SendMessageRequest, SendMessageResponse>,
       callback: grpc.sendUnaryData<SendMessageResponse>
     ): Promise<void> {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const params: MessageSendParams = FromProto.messageSendParams(call.request);
-        const task = await grpcTransportHandler.sendMessage(params, context);
-        const response = ToProto.messageSendResult(task);
-        callback(null, response);
-      } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        callback(mapToError(a2aError), null);
-      }
+      return wrapUnary(
+        call,
+        callback,
+        FromProto.messageSendParams,
+        grpcTransportHandler.sendMessage,
+        ToProto.messageSendResult
+      );
     },
 
     async sendStreamingMessage(
@@ -86,6 +95,8 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         const context = await buildContext(call, options.userBuilder);
         const params: MessageSendParams = FromProto.messageSendParams(call.request);
         const stream = await grpcTransportHandler.sendMessageStream(params, context);
+        const metadata = buildMetadata(context);
+        call.sendMetadata(metadata);
         for await (const responsePart of stream) {
           const response = ToProto.messageStreamResult(responsePart);
           call.write(response);
@@ -97,29 +108,25 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
             : A2AError.internalError(
                 error instanceof Error ? error.message : 'Internal server error'
               );
-        call.emit('error', a2aError);
+        call.emit('error', mapToError(a2aError));
       } finally {
         call.end();
       }
     },
 
-    taskSubscription(
+    async taskSubscription(
       call: grpc.ServerWritableStream<TaskSubscriptionRequest, StreamResponse>
-    ): void {
-      call.emit('error', A2AError.unsupportedOperation('Streaming not supported.'));
-      call.end();
-    },
-
-    async deleteTaskPushNotificationConfig(
-      call: grpc.ServerUnaryCall<DeleteTaskPushNotificationConfigRequest, Empty>,
-      callback: grpc.sendUnaryData<Empty>
     ): Promise<void> {
       try {
         const context = await buildContext(call, options.userBuilder);
-        const params: DeleteTaskPushNotificationConfigParams =
-          FromProto.deleteTaskPushNotificationConfigParams(call.request);
-        await grpcTransportHandler.deleteTaskPushNotificationConfig(params, context);
-        callback(null, null);
+        const params: TaskIdParams = FromProto.taskIdParams(call.request);
+        const stream = await grpcTransportHandler.resubscribe(params, context);
+        const metadata = buildMetadata(context);
+        call.sendMetadata(metadata);
+        for await (const responsePart of stream) {
+          const response = ToProto.messageStreamResult(responsePart);
+          call.write(response);
+        }
       } catch (error) {
         const a2aError =
           error instanceof A2AError
@@ -127,8 +134,23 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
             : A2AError.internalError(
                 error instanceof Error ? error.message : 'Internal server error'
               );
-        callback(a2aError, null);
+        call.emit('error', mapToError(a2aError));
+      } finally {
+        call.end();
       }
+    },
+
+    async deleteTaskPushNotificationConfig(
+      call: grpc.ServerUnaryCall<DeleteTaskPushNotificationConfigRequest, Empty>,
+      callback: grpc.sendUnaryData<Empty>
+    ): Promise<void> {
+      return wrapUnary(
+        call,
+        callback,
+        FromProto.deleteTaskPushNotificationConfigParams,
+        grpcTransportHandler.deleteTaskPushNotificationConfig,
+        () => ({})
+      );
     },
     async listTaskPushNotificationConfig(
       call: grpc.ServerUnaryCall<
@@ -137,23 +159,13 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
       >,
       callback: grpc.sendUnaryData<ListTaskPushNotificationConfigResponse>
     ): Promise<void> {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const params: ListTaskPushNotificationConfigParams =
-          FromProto.listTaskPushNotificationConfigParams(call.request);
-        const listTaskPushNotificationConfigs =
-          await grpcTransportHandler.listTaskPushNotificationConfigs(params, context);
-        const response = ToProto.listTaskPushNotificationConfigs(listTaskPushNotificationConfigs);
-        callback(null, response);
-      } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        callback(a2aError, null);
-      }
+      return wrapUnary(
+        call,
+        callback,
+        FromProto.listTaskPushNotificationConfigParams,
+        grpcTransportHandler.listTaskPushNotificationConfigs,
+        ToProto.listTaskPushNotificationConfigs
+      );
     },
     async createTaskPushNotificationConfig(
       call: grpc.ServerUnaryCall<
@@ -162,160 +174,112 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
       >,
       callback: grpc.sendUnaryData<TaskPushNotificationConfig>
     ): Promise<void> {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const params: TaskPushNotificationConfigInternal =
-          FromProto.setTaskPushNotificationConfigParams(call.request);
-        const taskPushNotificationConfig = await grpcTransportHandler.setTaskPushNotificationConfig(
-          params,
-          context
-        );
-        const response = ToProto.taskPushNotificationConfig(taskPushNotificationConfig);
-        callback(null, response);
-      } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        callback(a2aError, null);
-      }
+      return wrapUnary(
+        call,
+        callback,
+        FromProto.setTaskPushNotificationConfigParams,
+        grpcTransportHandler.setTaskPushNotificationConfig,
+        ToProto.taskPushNotificationConfig
+      );
     },
     async getTaskPushNotificationConfig(
       call: grpc.ServerUnaryCall<GetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>,
       callback: grpc.sendUnaryData<TaskPushNotificationConfig>
     ): Promise<void> {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const params: GetTaskPushNotificationConfigParams =
-          FromProto.getTaskPushNotificationConfigParams(call.request);
-        const taskPushNotificationConfig = await grpcTransportHandler.getTaskPushNotificationConfig(
-          params,
-          context
-        );
-        const response = ToProto.taskPushNotificationConfig(taskPushNotificationConfig);
-        callback(null, response);
-      } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        callback(a2aError, null);
-      }
+      return wrapUnary(
+        call,
+        callback,
+        FromProto.getTaskPushNotificationConfigParams,
+        grpcTransportHandler.getTaskPushNotificationConfig,
+        ToProto.taskPushNotificationConfig
+      );
     },
     async getTask(
       call: grpc.ServerUnaryCall<GetTaskRequest, Task>,
       callback: grpc.sendUnaryData<Task>
     ): Promise<void> {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const params: TaskQueryParams = FromProto.taskQueryParams(call.request);
-        const task = await grpcTransportHandler.getTask(params, context);
-        const response = ToProto.task(task);
-        callback(null, response);
-      } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        callback(a2aError, null);
-      }
+      return wrapUnary(
+        call,
+        callback,
+        FromProto.taskQueryParams,
+        grpcTransportHandler.getTask,
+        ToProto.task
+      );
     },
     async cancelTask(
       call: grpc.ServerUnaryCall<CancelTaskRequest, Task>,
       callback: grpc.sendUnaryData<Task>
     ): Promise<void> {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const params: TaskIdParams = FromProto.taskIdParams(call.request);
-        const task = await grpcTransportHandler.cancelTask(params, context);
-        const response = ToProto.task(task);
-        callback(null, response);
-      } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        callback(a2aError, null);
-      }
+      return wrapUnary(
+        call,
+        callback,
+        FromProto.taskIdParams,
+        grpcTransportHandler.cancelTask,
+        ToProto.task
+      );
     },
     async getAgentCard(
       call: grpc.ServerUnaryCall<GetAgentCardRequest, AgentCard>,
       callback: grpc.sendUnaryData<AgentCard>
     ): Promise<void> {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const agentCard = await grpcTransportHandler.getAuthenticatedExtendedAgentCard(context);
-        const response = ToProto.agentCard(agentCard);
-        callback(null, response);
-      } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        callback(a2aError, null);
-      }
+      return wrapUnary(
+        call,
+        callback,
+        () => ({}),
+        (_, context) => this.grpcTransportHandler.getAgentCard(context),
+        ToProto.agentCard
+      );
     },
   };
 }
 
-const mapToError = (error: A2AError): Partial<grpc.ServerErrorResponse> => {
-  switch (error.code) {
-    case -32001:
-      return {
-        code: grpc.status.NOT_FOUND,
-        details: error.message,
-      };
-    case -32002:
-    case -32007:
-    case -32008:
-      return {
-        code: grpc.status.FAILED_PRECONDITION,
-        details: error.message,
-      };
-    case -32003:
-    case -32004:
-    case -32009:
-      return {
-        code: grpc.status.UNIMPLEMENTED,
-        details: error.message,
-      };
-    case -32005:
-      return {
-        code: grpc.status.INVALID_ARGUMENT,
-        details: error.message,
-      };
-    case -32006:
-      return {
-        code: grpc.status.INTERNAL,
-        details: error.message,
-      };
-  }
+// --- Internal Helpers ---
+
+/**
+ * Maps A2AError or standard Error to gRPC Status codes
+ */
+const mapping: Record<number, grpc.status> = {
+    [-32001]: grpc.status.NOT_FOUND,
+    [-32002]: grpc.status.FAILED_PRECONDITION,
+    [-32007]: grpc.status.FAILED_PRECONDITION,
+    [-32008]: grpc.status.FAILED_PRECONDITION,
+    [-32003]: grpc.status.UNIMPLEMENTED,
+    [-32004]: grpc.status.UNIMPLEMENTED,
+    [-32009]: grpc.status.UNIMPLEMENTED,
+    [-32005]: grpc.status.INVALID_ARGUMENT,
+    [-32006]: grpc.status.INTERNAL,
+  };
+
+const mapToError = (error: unknown): Partial<grpc.ServiceError> => {
+  const a2aError = error instanceof A2AError 
+    ? error 
+    : A2AError.internalError(error instanceof Error ? error.message : 'Unknown Error');
+
+  return {
+    message: a2aError.message,
+    code: mapping[a2aError.code] ?? grpc.status.INTERNAL,
+    details: a2aError.message,
+  };
 };
 
 const buildContext = async (
   call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>,
-  userBuilder: (
-    call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>
-  ) => Promise<User | undefined>
+  userBuilder: gRpcHandlerOptions['userBuilder']
 ): Promise<ServerCallContext> => {
   const user = await userBuilder(call);
   const extensionHeader = call.metadata.get(HTTP_EXTENSION_HEADER.toLowerCase());
-  const extensionString = Array.isArray(extensionHeader)
-    ? extensionHeader.join('')
-    : extensionHeader;
+  const extensionString = Array.isArray(extensionHeader) ? extensionHeader.join(',') : (extensionHeader as string);
 
   return new ServerCallContext(
     Extensions.parseServiceParameter(extensionString),
     user ?? new UnauthenticatedUser()
   );
+};
+
+const buildMetadata = (context: ServerCallContext): grpc.Metadata => {
+  const metadata = new grpc.Metadata();
+  if (context.activatedExtensions?.length) {
+    metadata.set(HTTP_EXTENSION_HEADER, context.activatedExtensions.join(','));
+  }
+  return metadata;
 };

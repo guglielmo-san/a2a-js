@@ -166,7 +166,7 @@ export class FromProto {
       return {
         kind: 'text',
         text: part.part.value,
-      } as types.TextPart;
+      };
     }
 
     if (part.part?.$case === 'file') {
@@ -177,14 +177,14 @@ export class FromProto {
           file: {
             uri: filePart.file.value,
           },
-        } as types.FilePart;
+        };
       } else if (filePart.file?.$case === 'fileWithBytes') {
         return {
           kind: 'file',
           file: {
             bytes: filePart.file.value.toString('base64'),
           },
-        } as types.FilePart;
+        };
       }
       throw new Error('Invalid file part type');
     }
@@ -193,7 +193,7 @@ export class FromProto {
       return {
         kind: 'data',
         data: part.part.value.data,
-      } as types.DataPart;
+      };
     }
 
     throw new Error('Invalid part type');
@@ -261,7 +261,7 @@ export class ToProto {
     return {
       schemes: Object.fromEntries(
         Object.entries(security).map(([key, value]) => {
-          return [key, { list: value } as StringList];
+          return [key, { list: value }];
         })
       ),
     };
@@ -277,7 +277,7 @@ export class ToProto {
               name: scheme.name,
               location: scheme.in,
               description: scheme.description ?? '',
-            } as APIKeySecurityScheme,
+            },
           },
         };
       case 'http':
@@ -288,7 +288,7 @@ export class ToProto {
               description: scheme.description ?? '',
               scheme: scheme.scheme,
               bearerFormat: scheme.bearerFormat ?? '',
-            } as HTTPAuthSecurityScheme,
+            },
           },
         };
       case 'mutualTLS':
@@ -297,7 +297,7 @@ export class ToProto {
             $case: 'mtlsSecurityScheme',
             value: {
               description: scheme.description ?? '',
-            } as MutualTlsSecurityScheme,
+            },
           },
         };
       case 'oauth2':
@@ -306,39 +306,9 @@ export class ToProto {
             $case: 'oauth2SecurityScheme',
             value: {
               description: scheme.description ?? '',
-              flows: {
-                implicit: scheme.flows.implicit
-                  ? ({
-                      authorizationUrl: scheme.flows.implicit.authorizationUrl,
-                      refreshUrl: scheme.flows.implicit.refreshUrl ?? '',
-                      scopes: scheme.flows.implicit.scopes,
-                    } as ImplicitOAuthFlow)
-                  : undefined,
-                password: scheme.flows.password
-                  ? ({
-                      tokenUrl: scheme.flows.password.tokenUrl,
-                      refreshUrl: scheme.flows.password.refreshUrl ?? '',
-                      scopes: scheme.flows.password.scopes,
-                    } as PasswordOAuthFlow)
-                  : undefined,
-                clientCredentials: scheme.flows.clientCredentials
-                  ? ({
-                      tokenUrl: scheme.flows.clientCredentials.tokenUrl,
-                      refreshUrl: scheme.flows.clientCredentials.refreshUrl ?? '',
-                      scopes: scheme.flows.clientCredentials.scopes,
-                    } as ClientCredentialsOAuthFlow)
-                  : undefined,
-                authorizationCode: scheme.flows.authorizationCode
-                  ? ({
-                      authorizationUrl: scheme.flows.authorizationCode.authorizationUrl,
-                      tokenUrl: scheme.flows.authorizationCode.tokenUrl,
-                      refreshUrl: scheme.flows.authorizationCode.refreshUrl ?? '',
-                      scopes: scheme.flows.authorizationCode.scopes,
-                    } as AuthorizationCodeOAuthFlow)
-                  : undefined,
-              } as OAuthFlows,
+              flows: this.oauthFlows(scheme.flows),
               oauth2MetadataUrl: scheme.oauth2MetadataUrl ?? '',
-            } as OAuth2SecurityScheme,
+            },
           },
         };
       case 'openIdConnect':
@@ -348,11 +318,62 @@ export class ToProto {
             value: {
               description: scheme.description ?? '',
               openIdConnectUrl: scheme.openIdConnectUrl,
-            } as OpenIdConnectSecurityScheme,
+            },
           },
         };
       default:
         return undefined;
+    }
+  }
+
+  static oauthFlows(flows: types.OAuthFlows): OAuthFlows {
+    if (flows.implicit) {
+      return {
+        flow: {
+          $case: 'implicit',
+          value: {
+            authorizationUrl: flows.implicit.authorizationUrl,
+            scopes: flows.implicit.scopes,
+            refreshUrl: flows.implicit.refreshUrl,
+          },
+        },
+      };
+    } else if (flows.password) {
+      return  {
+        flow: {
+          $case: 'password',
+          value: {
+            tokenUrl: flows.password.tokenUrl,
+            scopes: flows.password.scopes,
+            refreshUrl: flows.password.refreshUrl,
+          },
+        },
+      };
+    } else if (flows.clientCredentials) {
+      return {
+        flow: {
+          $case: 'clientCredentials',
+          value: {
+            tokenUrl: flows.clientCredentials.tokenUrl,
+            scopes: flows.clientCredentials.scopes,
+            refreshUrl: flows.clientCredentials.refreshUrl,
+          },
+        },
+      };
+    } else if (flows.authorizationCode) {
+      return {
+        flow: {
+          $case: 'authorizationCode',
+          value: {
+            authorizationUrl: flows.authorizationCode.authorizationUrl,
+            tokenUrl: flows.authorizationCode.tokenUrl,
+            scopes: flows.authorizationCode.scopes,
+            refreshUrl: flows.authorizationCode.refreshUrl,
+          },
+        },
+      };
+    } else {
+      return undefined;
     }
   }
 
@@ -571,8 +592,7 @@ export class ToProto {
     if (part.kind === 'text') {
       return {
         part: { $case: 'text', value: part.text },
-        metadata: { ...part.metadata },
-      } as Part;
+      };
     }
 
     if (part.kind === 'file') {
@@ -592,15 +612,13 @@ export class ToProto {
       }
       return {
         part: { $case: 'file', value: filePart },
-        metadata: { ...part.metadata },
-      } as Part;
+      };
     }
 
     if (part.kind === 'data') {
       return {
         part: { $case: 'data', value: { data: part.data } },
-        metadata: { ...part.metadata },
-      } as Part;
+      };
     }
 
     throw new Error('Invalid part type');

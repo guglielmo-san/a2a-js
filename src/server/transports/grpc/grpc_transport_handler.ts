@@ -39,7 +39,6 @@ export class gRpcTransportHandler {
 
   /**
    * Sends a message to the agent.
-   * Accepts both snake_case and camelCase input, returns camelCase.
    */
   async sendMessage(
     params: MessageSendParams,
@@ -50,7 +49,6 @@ export class gRpcTransportHandler {
 
   /**
    * Sends a message with streaming response.
-   * Accepts both snake_case and camelCase input, returns camelCase stream.
    * @throws {A2AError} UnsupportedOperation if streaming not supported
    */
   async sendMessageStream(
@@ -72,6 +70,9 @@ export class gRpcTransportHandler {
    * Validates historyLength parameter if provided.
    */
   async getTask(params: TaskQueryParams, context: ServerCallContext): Promise<Task> {
+    if (params.historyLength !== undefined && params.historyLength < 0){
+      throw A2AError.invalidParams('historyLength must be non-negative');
+    }
     return this.requestHandler.getTask(params, context);
   }
 
@@ -88,18 +89,16 @@ export class gRpcTransportHandler {
    * @throws {A2AError} UnsupportedOperation if streaming not supported
    */
   async resubscribe(
-    taskId: string,
+    params: TaskIdParams,
     context: ServerCallContext
   ): Promise<
     AsyncGenerator<Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent, void, undefined>
   > {
-    const params: TaskIdParams = { id: taskId };
     return this.requestHandler.resubscribe(params, context);
   }
 
   /**
    * Sets a push notification configuration.
-   * Accepts both snake_case and camelCase input, returns camelCase.
    * @throws {A2AError} PushNotificationNotSupported if push notifications not supported
    */
   async setTaskPushNotificationConfig(
