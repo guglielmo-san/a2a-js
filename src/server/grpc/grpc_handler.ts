@@ -1,5 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
-import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, DeleteTaskPushNotificationConfigRequest, GetExtendedAgentCardRequest, GetTaskPushNotificationConfigRequest, GetTaskRequest, ListTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigResponse, ListTasksRequest, ListTasksResponse, Message, SendMessageRequest, SendMessageResponse, SetTaskPushNotificationConfigRequest, StreamResponse, SubscribeToTaskRequest, Task, TaskPushNotificationConfig } from '../../grpc/a2a.js';
+import { A2AServiceServer, A2AServiceService, AgentCard, CancelTaskRequest, CreateTaskPushNotificationConfigRequest, DeleteTaskPushNotificationConfigRequest, GetAgentCardRequest, GetTaskPushNotificationConfigRequest, GetTaskRequest, ListTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigResponse, Message, SendMessageRequest, SendMessageResponse, StreamResponse, Task, TaskPushNotificationConfig, TaskSubscriptionRequest } from '../../grpc/a2a.js';
 import { Task as A2ATask, DeleteTaskPushNotificationConfigParams, GetTaskPushNotificationConfigParams, ListTaskPushNotificationConfigParams, MessageSendParams, TaskIdParams, TaskPushNotificationConfig as TaskPushNotificationConfigInternal, TaskQueryParams } from '../../types.js';
 import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
@@ -66,9 +66,12 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call.end();
       }
     },
-    subscribeToTask(call: grpc.ServerWritableStream<SubscribeToTaskRequest, StreamResponse>): void {
-      throw new Error('Method not implemented.');
+
+    taskSubscription(call: grpc.ServerWritableStream<TaskSubscriptionRequest, StreamResponse>): void {
+      call.emit('error', A2AError.unsupportedOperation('Streaming not supported.'));
+      call.end();
     },
+    
     async deleteTaskPushNotificationConfig(
       call: grpc.ServerUnaryCall<DeleteTaskPushNotificationConfigRequest, Empty>,
       callback: grpc.sendUnaryData<Empty>
@@ -103,8 +106,8 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         callback(a2aError, null);
       }
     },
-    async setTaskPushNotificationConfig(
-      call: grpc.ServerUnaryCall<SetTaskPushNotificationConfigRequest, TaskPushNotificationConfig>,
+    async createTaskPushNotificationConfig(
+      call: grpc.ServerUnaryCall<CreateTaskPushNotificationConfigRequest, TaskPushNotificationConfig>,
       callback: grpc.sendUnaryData<TaskPushNotificationConfig>
     ): Promise<void> {
       try {
@@ -135,12 +138,6 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         callback(a2aError, null);
       }
     },
-    listTasks(
-      call: grpc.ServerUnaryCall<ListTasksRequest, ListTasksResponse>,
-      callback: grpc.sendUnaryData<ListTasksResponse>
-    ): void {
-      throw new Error('Method not implemented.');
-    },
     async getTask(call: grpc.ServerUnaryCall<GetTaskRequest, Task>, callback: grpc.sendUnaryData<Task>): Promise<void> {
       try {
         const context = await buildContext(call, options.userBuilder);
@@ -157,7 +154,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
     async cancelTask(call: grpc.ServerUnaryCall<CancelTaskRequest, Task>, callback: grpc.sendUnaryData<Task>): Promise<void> {
       try {
         const context = await buildContext(call, options.userBuilder);
-        const params: TaskIdParams = FromProto.taskQueryParams(call.request);
+        const params: TaskIdParams = FromProto.taskIdParams(call.request);
         const task = await grpcTransportHandler.cancelTask(params, context);
         const response = ToProto.task(task);
         callback(null, response);
@@ -167,8 +164,8 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         callback(a2aError, null);
       }
     },
-    async getExtendedAgentCard(
-      call: grpc.ServerUnaryCall<GetExtendedAgentCardRequest, AgentCard>,
+    async getAgentCard(
+      call: grpc.ServerUnaryCall<GetAgentCardRequest, AgentCard>,
       callback: grpc.sendUnaryData<AgentCard>
     ): Promise<void> {
       try {

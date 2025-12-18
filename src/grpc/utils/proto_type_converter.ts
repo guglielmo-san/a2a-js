@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { agent } from 'supertest';
 import * as types from '../../types.js';
 import {
     AgentCard,
@@ -36,7 +34,6 @@ import {
     SendMessageResponse,
     StreamResponse,
     StringList,
-    SubscribeToTaskRequest,
     Task,
     TaskArtifactUpdateEvent,
     TaskPushNotificationConfig,
@@ -45,9 +42,9 @@ import {
     TaskStatusUpdateEvent,
     DeleteTaskPushNotificationConfigRequest,
     ListTaskPushNotificationConfigRequest,
-    SetTaskPushNotificationConfigRequest,
     ListTaskPushNotificationConfigResponse,
     AgentSkill,
+    CreateTaskPushNotificationConfigRequest,
 } from '../a2a.js';
 
 const TASK_ID_REGEX = /tasks\/([^/]+)/;
@@ -108,7 +105,7 @@ export class FromProto {
     }
 
     static setTaskPushNotificationConfigParams(
-        request: SetTaskPushNotificationConfigRequest
+        request: CreateTaskPushNotificationConfigRequest
     ): types.TaskPushNotificationConfig {
         return {
             taskId: this._getTaskIdFromName(request.parent),
@@ -130,7 +127,7 @@ export class FromProto {
         return {
             kind: 'message',
             messageId: message.messageId,
-            parts: message.parts.map(p => this.parts(p)),
+            parts: message.content.map(p => this.parts(p)),
             contextId: message.contextId ?? undefined,
             taskId: message.taskId ?? undefined,
             role: message.role === Role.ROLE_AGENT ? "agent" : "user",
@@ -143,8 +140,8 @@ export class FromProto {
         return {
             blocking: configuration.blocking,
             acceptedOutputModes: configuration.acceptedOutputModes,
-            pushNotificationConfig: configuration.pushNotificationConfig
-                ? this.pushNotificationConfig(configuration.pushNotificationConfig)
+            pushNotificationConfig: configuration.pushNotification
+                ? this.pushNotificationConfig(configuration.pushNotification)
                 : undefined,
         };
     }
@@ -173,7 +170,6 @@ export class FromProto {
         return {
             kind: "text",
             text: part.part.value,
-            metadata: { ...part.metadata },
         } as types.TextPart;
     }
 
@@ -185,7 +181,6 @@ export class FromProto {
                 file: {
                     uri: filePart.file.value,
                 },
-                metadata: { ...part.metadata },
             } as types.FilePart;
         } else if (filePart.file?.$case === "fileWithBytes") {
             return {
@@ -193,7 +188,6 @@ export class FromProto {
                 file: {
                     bytes: filePart.file.value.toString(),
                 },
-                metadata: { ...part.metadata },
             } as types.FilePart;
         }
         throw new Error("Invalid file part type");
@@ -203,7 +197,6 @@ export class FromProto {
         return {
             kind: "data",
             data: part.part.value.data,
-            metadata: { ...part.metadata },
         } as types.DataPart;
     }
 
@@ -233,13 +226,23 @@ export class ToProto {
             version: agentCard.version,
             documentationUrl: agentCard.documentationUrl ?? '',
             capabilities: this.agentCapabilities(agentCard.capabilities),
-            securitySchemes: this.securitySchemes(Object.values(agentCard.securitySchemes)),
+            securitySchemes: Object.fromEntries(
+                Object.entries(agentCard.securitySchemes).map(([key, value]) => [key, this.securityScheme(value)])
+            ),
             security: agentCard.security.map(s => this.security(s)),
             defaultInputModes: agentCard.defaultInputModes,
             defaultOutputModes: agentCard.defaultOutputModes,
             skills: agentCard.skills.map(s => this.agentSkill(s)),
             supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard ?? false,
-            signatures: this.signatures(agentCard.signatures),
+            signatures: agentCard.signatures.map(s => this.signatures(s)),
+        };
+    }
+
+    static signatures(signatures: types.AgentCardSignature): AgentCardSignature {
+        return {
+            protected: signatures.protected,
+            signature: signatures.signature,
+            header: signatures.header,
         };
     }
 
@@ -266,36 +269,42 @@ export class ToProto {
         };
     }
 
-    static securitySchemes(schemes: types.SecurityScheme[]): SecurityScheme[] {
-        return schemes.map(scheme => {
-            switch (scheme.type) {
-                case "apiKey":
-                    return {
-                        $case: "apiKeySecurityScheme",
-                        value: {
-                            name: scheme.name,
-                            location: scheme.in,
-                            description: scheme.description ?? '',
-                        } as APIKeySecurityScheme,
-                    };
-                case "http":
-                    return {
+    static securityScheme(scheme: types.SecurityScheme): SecurityScheme {
+        switch (scheme.type) {
+            case "apiKey":
+                return {
+                    scheme: {
+                    $case: "apiKeySecurityScheme",
+                    value: {
+                        name: scheme.name,
+                        location: scheme.in,
+                        description: scheme.description ?? '',
+                    } as APIKeySecurityScheme,
+                }
+            };
+            case "http":
+                return {
+                    scheme: {
                         $case: "httpAuthSecurityScheme",
                         value: {
                             description: scheme.description ?? '',
                             scheme: scheme.scheme,
                             bearerFormat: scheme.bearerFormat ?? '',
                         } as HTTPAuthSecurityScheme,
-                    };
-                case "mutualTLS":
-                    return {
+                    }
+                };
+            case "mutualTLS":
+                return {
+                    scheme: {
                         $case: "mtlsSecurityScheme",
                         value: {
                             description: scheme.description ?? '',
                         } as MutualTlsSecurityScheme,
-                    };
-                case "oauth2":
-                    return {
+                    }
+                };
+            case "oauth2":
+                return {
+                    scheme: {
                         $case: "oauth2SecurityScheme",
                         value: {
                             description: scheme.description ?? '',
@@ -332,19 +341,21 @@ export class ToProto {
                             } as OAuthFlows,
                             oauth2MetadataUrl: scheme.oauth2MetadataUrl ?? '',
                         } as OAuth2SecurityScheme,
-                    };
-                case "openIdConnect":
-                    return {
+                    }
+                };
+            case "openIdConnect":
+                return {
+                    scheme: {
                         $case: "openIdConnectSecurityScheme",
                         value: {
                             description: scheme.description ?? '',
                             openIdConnectUrl: scheme.openIdConnectUrl,
                         } as OpenIdConnectSecurityScheme,
-                    };
-                default:
-                    return undefined;
-            }
-        });
+                    }
+                };
+            default:
+                throw new Error(`Unknown security scheme type: ${(scheme as any).type}`);
+        }
     }
 
     static agentInterface(agentInterface: types.AgentInterface): AgentInterface {
@@ -486,13 +497,12 @@ export class ToProto {
     static message(message: types.Message): Message {
         return {
             messageId: message.messageId,
-            parts: message.parts.map(p => this.parts(p)),
+            content: message.parts.map(p => this.parts(p)),
             contextId: message.contextId ?? '',
             taskId: message.taskId ?? '',
             role: message.role === 'agent' ? Role.ROLE_AGENT : Role.ROLE_USER,
             metadata: message.metadata,
             extensions: message.extensions ? message.extensions : [],
-            referenceTaskIds: message.referenceTaskIds ? message.referenceTaskIds : [],
         };
     }
 
@@ -510,7 +520,7 @@ export class ToProto {
     static taskStatus(status: types.TaskStatus): TaskStatus {
         return {
             state: this.taskState(status.state),
-            message: status.message ? this.message(status.message) : undefined,
+            update: status.message ? this.message(status.message) : undefined,
             timestamp: status.timestamp ? new Date(status.timestamp) : undefined,
         };
     }
@@ -563,9 +573,9 @@ export class ToProto {
         if (part.kind === "file") {
             let filePart: ProtoFilePart;
             if ('uri' in part.file) {
-                filePart = { file: { $case: "fileWithUri", value: part.file.uri }, mediaType: undefined, name: part.file.name ?? '' };
+                filePart = { file: { $case: "fileWithUri", value: part.file.uri }, mimeType: part.file.mimeType ?? '' };
             } else if ('bytes' in part.file) {
-                filePart = { file: { $case: "fileWithBytes", value: Buffer.from(part.file.bytes) }, mediaType: undefined, name: part.file.name ?? '' };
+                filePart = { file: { $case: "fileWithBytes", value: Buffer.from(part.file.bytes) }, mimeType: part.file.mimeType ?? '' };
             } else {
                 throw new Error("Invalid file part");
             }
