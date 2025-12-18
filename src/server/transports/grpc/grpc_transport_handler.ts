@@ -36,8 +36,8 @@ export class gRpcTransportHandler {
       /**
        * Gets the authenticated extended agent card.
        */
-      async getAuthenticatedExtendedAgentCard(): Promise<AgentCard> {
-        return this.requestHandler.getAuthenticatedExtendedAgentCard();
+      async getAuthenticatedExtendedAgentCard(context: ServerCallContext): Promise<AgentCard> {
+        return this.requestHandler.getAuthenticatedExtendedAgentCard(context);
       }
     
       /**
@@ -74,19 +74,16 @@ export class gRpcTransportHandler {
        * Validates historyLength parameter if provided.
        */
       async getTask(
-        taskId: string,
+        params: TaskQueryParams,
         context: ServerCallContext,
-        historyLength?: unknown
       ): Promise<Task> {
-        const params: TaskQueryParams = { id: taskId };
         return this.requestHandler.getTask(params, context);
       }
     
       /**
        * Cancels a task.
        */
-      async cancelTask(taskId: string, context: ServerCallContext): Promise<Task> {
-        const params: TaskIdParams = { id: taskId };
+      async cancelTask(params: TaskIdParams, context: ServerCallContext): Promise<Task> {
         return this.requestHandler.cancelTask(params, context);
       }
     

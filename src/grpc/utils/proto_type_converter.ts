@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { agent } from 'supertest';
 import * as types from '../../types.js';
 import {
     AgentCard,
@@ -46,6 +47,7 @@ import {
     ListTaskPushNotificationConfigRequest,
     SetTaskPushNotificationConfigRequest,
     ListTaskPushNotificationConfigResponse,
+    AgentSkill,
 } from '../a2a.js';
 
 const TASK_ID_REGEX = /tasks\/([^/]+)/;
@@ -73,6 +75,19 @@ export class FromProto {
             );
         }
         return match[1];
+    }
+
+    static taskQueryParams(request: GetTaskRequest): types.TaskQueryParams {
+        return {
+            id: this._getTaskIdFromName(request.name),
+            historyLength: request.historyLength,
+        };
+    }
+
+    static taskIdParams(request: CancelTaskRequest): types.TaskIdParams {
+        return {
+            id: this._getTaskIdFromName(request.name),
+        };
     }
 
     static getTaskPushNotificationConfigParams(
@@ -205,6 +220,163 @@ export class FromProto {
 }
 
 export class ToProto {
+
+    static agentCard(agentCard: types.AgentCard): AgentCard {
+        return {
+            protocolVersion: agentCard.protocolVersion,
+            name: agentCard.name,
+            description: agentCard.description,
+            url: agentCard.url,
+            preferredTransport: agentCard.preferredTransport ?? '',
+            additionalInterfaces: agentCard.additionalInterfaces.map(i => this.agentInterface(i)),
+            provider: this.agentProvider(agentCard.provider),
+            version: agentCard.version,
+            documentationUrl: agentCard.documentationUrl ?? '',
+            capabilities: this.agentCapabilities(agentCard.capabilities),
+            securitySchemes: this.securitySchemes(Object.values(agentCard.securitySchemes)),
+            security: agentCard.security.map(s => this.security(s)),
+            defaultInputModes: agentCard.defaultInputModes,
+            defaultOutputModes: agentCard.defaultOutputModes,
+            skills: agentCard.skills.map(s => this.agentSkill(s)),
+            supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard ?? false,
+            signatures: this.signatures(agentCard.signatures),
+        };
+    }
+
+    static agentSkill(skill: types.AgentSkill): AgentSkill {
+        return {
+            id: skill.id,
+            name: skill.name,
+            description: skill.description ?? '',
+            tags: skill.tags ?? [],
+            examples: skill.examples ?? [],
+            inputModes: skill.inputModes ?? [],
+            outputModes: skill.outputModes ?? [],
+            security: skill.security.map(s => this.security(s)),
+        };
+    }
+
+    static security(security: {[k: string]: string[]}): Security {
+        return {
+            schemes: Object.fromEntries(
+                Object.entries(security).map(([key, value]) => {
+                    return [key, { list: value } as StringList];
+                })
+            ),
+        };
+    }
+
+    static securitySchemes(schemes: types.SecurityScheme[]): SecurityScheme[] {
+        return schemes.map(scheme => {
+            switch (scheme.type) {
+                case "apiKey":
+                    return {
+                        $case: "apiKeySecurityScheme",
+                        value: {
+                            name: scheme.name,
+                            location: scheme.in,
+                            description: scheme.description ?? '',
+                        } as APIKeySecurityScheme,
+                    };
+                case "http":
+                    return {
+                        $case: "httpAuthSecurityScheme",
+                        value: {
+                            description: scheme.description ?? '',
+                            scheme: scheme.scheme,
+                            bearerFormat: scheme.bearerFormat ?? '',
+                        } as HTTPAuthSecurityScheme,
+                    };
+                case "mutualTLS":
+                    return {
+                        $case: "mtlsSecurityScheme",
+                        value: {
+                            description: scheme.description ?? '',
+                        } as MutualTlsSecurityScheme,
+                    };
+                case "oauth2":
+                    return {
+                        $case: "oauth2SecurityScheme",
+                        value: {
+                            description: scheme.description ?? '',
+                            flows: {
+                                implicit: scheme.flows.implicit
+                                    ? {
+                                          authorizationUrl: scheme.flows.implicit.authorizationUrl,
+                                          refreshUrl: scheme.flows.implicit.refreshUrl ?? '',
+                                          scopes: scheme.flows.implicit.scopes,
+                                      } as ImplicitOAuthFlow
+                                    : undefined,
+                                password: scheme.flows.password
+                                    ? {
+                                          tokenUrl: scheme.flows.password.tokenUrl,
+                                          refreshUrl: scheme.flows.password.refreshUrl ?? '',
+                                          scopes: scheme.flows.password.scopes,
+                                      } as PasswordOAuthFlow
+                                    : undefined,
+                                clientCredentials: scheme.flows.clientCredentials
+                                    ? {
+                                          tokenUrl: scheme.flows.clientCredentials.tokenUrl,
+                                          refreshUrl: scheme.flows.clientCredentials.refreshUrl ?? '',
+                                          scopes: scheme.flows.clientCredentials.scopes,
+                                      } as ClientCredentialsOAuthFlow
+                                    : undefined,
+                                authorizationCode: scheme.flows.authorizationCode
+                                    ? {
+                                          authorizationUrl: scheme.flows.authorizationCode.authorizationUrl,
+                                          tokenUrl: scheme.flows.authorizationCode.tokenUrl,
+                                          refreshUrl: scheme.flows.authorizationCode.refreshUrl ?? '',
+                                          scopes: scheme.flows.authorizationCode.scopes,
+                                      } as AuthorizationCodeOAuthFlow
+                                    : undefined,
+                            } as OAuthFlows,
+                            oauth2MetadataUrl: scheme.oauth2MetadataUrl ?? '',
+                        } as OAuth2SecurityScheme,
+                    };
+                case "openIdConnect":
+                    return {
+                        $case: "openIdConnectSecurityScheme",
+                        value: {
+                            description: scheme.description ?? '',
+                            openIdConnectUrl: scheme.openIdConnectUrl,
+                        } as OpenIdConnectSecurityScheme,
+                    };
+                default:
+                    return undefined;
+            }
+        });
+    }
+
+    static agentInterface(agentInterface: types.AgentInterface): AgentInterface {
+        return {
+            transport: agentInterface.transport,
+            url: agentInterface.url,
+        };
+    }
+
+    static agentProvider(agentProvider: types.AgentProvider): AgentProvider {
+        return {
+            url: agentProvider.url,
+            organization: agentProvider.organization,
+        };
+    }
+
+    static agentCapabilities(capabilities: types.AgentCapabilities): AgentCapabilities {
+        return {
+            streaming: capabilities.streaming ?? false,
+            pushNotifications: capabilities.pushNotifications ?? false,
+            extensions: capabilities.extensions.map(e => this.extension(e)),
+        };
+    }
+
+    static extension(extension: types.AgentExtension): AgentExtension {
+        return {
+            uri: extension.uri,
+            description: extension.description ?? '',
+            required: extension.required ?? false,
+            params: extension.params,
+        };
+    }
 
     static listTaskPushNotificationConfigs(config: types.TaskPushNotificationConfig[]): ListTaskPushNotificationConfigResponse {
         return {
