@@ -34,7 +34,10 @@ describe('grpcHandler', () => {
   };
 
   // Helper to create a mock gRPC Unary Call
-  const createMockUnaryCall = (request: any, metadataValues: Record<string, string> = {}): grpc.ServerUnaryCall<any, any> => {
+  const createMockUnaryCall = (
+    request: any,
+    metadataValues: Record<string, string> = {}
+  ): grpc.ServerUnaryCall<any, any> => {
     const metadata = new grpc.Metadata();
     Object.entries(metadataValues).forEach(([k, v]) => metadata.set(k, v));
     return {
@@ -73,7 +76,7 @@ describe('grpcHandler', () => {
 
     handler = grpcHandler({
       requestHandler: mockRequestHandler,
-      userBuilder: async () => ({ id: 'test-user' } as any),
+      userBuilder: async () => ({ id: 'test-user' }) as any,
     });
   });
 
@@ -119,9 +122,11 @@ describe('grpcHandler', () => {
       const call = createMockUnaryCall({ message: { role: 'user', parts: [] } });
       const callback = vi.fn();
 
-      const messageSendParams = { message: { role: 'user' } } as MessageSendParams
+      const messageSendParams = { message: { role: 'user' } } as MessageSendParams;
       (FromProto.messageSendParams as Mock).mockReturnValue(messageSendParams);
-      const sendMessageResponse = { payload: { $case: 'task', value: { id: 'task-1' } } as proto.SendMessageResponse };
+      const sendMessageResponse = {
+        payload: { $case: 'task', value: { id: 'task-1' } } as proto.SendMessageResponse,
+      };
       (ToProto.messageSendResult as Mock).mockReturnValue(sendMessageResponse);
       await handler.sendMessage(call, callback);
 
@@ -139,7 +144,7 @@ describe('grpcHandler', () => {
         yield { kind: 'task', id: 't1' };
       }
       (mockRequestHandler.sendMessageStream as Mock).mockResolvedValue(mockStream());
-      
+
       const call = createMockWritableStream({ message: { role: 'user', parts: [] } });
 
       await handler.sendStreamingMessage(call);
@@ -155,23 +160,29 @@ describe('grpcHandler', () => {
 
       await handler.sendStreamingMessage(call);
 
-      expect(call.emit).toHaveBeenCalledWith('error', expect.objectContaining({
-        code: grpc.status.INTERNAL
-      }));
+      expect(call.emit).toHaveBeenCalledWith(
+        'error',
+        expect.objectContaining({
+          code: grpc.status.INTERNAL,
+        })
+      );
       expect(call.end).toHaveBeenCalled();
     });
   });
 
   describe('Extensions (Metadata) Handling', () => {
-    it('should extract extensions from metadata and pass to context', async () => {      
+    it('should extract extensions from metadata and pass to context', async () => {
       // Mocking the header 'x-a2a-extension'
-      const call = createMockUnaryCall({ id: 'task-1' }, {
-        [HTTP_EXTENSION_HEADER.toLowerCase()]: 'extension-v1'
-      });
+      const call = createMockUnaryCall(
+        { id: 'task-1' },
+        {
+          [HTTP_EXTENSION_HEADER.toLowerCase()]: 'extension-v1',
+        }
+      );
       const callback = vi.fn();
 
       (FromProto.taskQueryParams as Mock).mockReturnValue({ id: 'task-1' });
-      (ToProto.task as Mock).mockReturnValue({ id: 'task-1' , contextId: 'ctx-1'});
+      (ToProto.task as Mock).mockReturnValue({ id: 'task-1', contextId: 'ctx-1' });
       await handler.getTask(call, callback);
 
       const contextArg = (mockRequestHandler.getTask as Mock).mock.calls[0][1];
@@ -181,18 +192,21 @@ describe('grpcHandler', () => {
 
     it('should return activated extensions in context through metadata', async () => {
       // Mocking the header 'x-a2a-extension'
-      const call = createMockUnaryCall({ id: 'task-1' }, {
-        [HTTP_EXTENSION_HEADER.toLowerCase()]: 'extension-v1'
-      });
+      const call = createMockUnaryCall(
+        { id: 'task-1' },
+        {
+          [HTTP_EXTENSION_HEADER.toLowerCase()]: 'extension-v1',
+        }
+      );
       const callback = vi.fn();
 
-    (mockRequestHandler.getTask as Mock).mockImplementation(async (_params, context) => {
-    context.addActivatedExtension('extension-v1');
-    return testTask;
-  });
+      (mockRequestHandler.getTask as Mock).mockImplementation(async (_params, context) => {
+        context.addActivatedExtension('extension-v1');
+        return testTask;
+      });
 
       (FromProto.taskQueryParams as Mock).mockReturnValue({ id: 'task-1' });
-      (ToProto.task as Mock).mockReturnValue({ id: 'task-1' , contextId: 'ctx-1'});
+      (ToProto.task as Mock).mockReturnValue({ id: 'task-1', contextId: 'ctx-1' });
       await handler.getTask(call, callback);
 
       const [metadata] = (call.sendMetadata as Mock).mock.calls[0];

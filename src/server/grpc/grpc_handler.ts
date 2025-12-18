@@ -17,10 +17,7 @@ import {
   TaskPushNotificationConfig,
   TaskSubscriptionRequest,
 } from '../../grpc/a2a.js';
-import {
-  MessageSendParams,
-  TaskIdParams,
-} from '../../types.js';
+import { MessageSendParams, TaskIdParams } from '../../types.js';
 import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
 import { FromProto, ToProto } from '../../grpc/utils/proto_type_converter.js';
@@ -62,15 +59,15 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
     handler: (params: TParams, ctx: ServerCallContext) => Promise<TResult>,
     converter: (res: TResult) => TRes
   ) => {
-      try {
-        const context = await buildContext(call, options.userBuilder);
-        const params = parser(call.request);
-        const result = await handler(params, context);
-        call.sendMetadata(buildMetadata(context));
-        callback(null, converter(result));
-      } catch (error) {
-        callback(mapToError(error), null);
-      }
+    try {
+      const context = await buildContext(call, options.userBuilder);
+      const params = parser(call.request);
+      const result = await handler(params, context);
+      call.sendMetadata(buildMetadata(context));
+      callback(null, converter(result));
+    } catch (error) {
+      callback(mapToError(error), null);
+    }
   };
 
   return {
@@ -232,21 +229,22 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
  * Maps A2AError or standard Error to gRPC Status codes
  */
 const mapping: Record<number, grpc.status> = {
-    [-32001]: grpc.status.NOT_FOUND,
-    [-32002]: grpc.status.FAILED_PRECONDITION,
-    [-32007]: grpc.status.FAILED_PRECONDITION,
-    [-32008]: grpc.status.FAILED_PRECONDITION,
-    [-32003]: grpc.status.UNIMPLEMENTED,
-    [-32004]: grpc.status.UNIMPLEMENTED,
-    [-32009]: grpc.status.UNIMPLEMENTED,
-    [-32005]: grpc.status.INVALID_ARGUMENT,
-    [-32006]: grpc.status.INTERNAL,
-  };
+  [-32001]: grpc.status.NOT_FOUND,
+  [-32002]: grpc.status.FAILED_PRECONDITION,
+  [-32007]: grpc.status.FAILED_PRECONDITION,
+  [-32008]: grpc.status.FAILED_PRECONDITION,
+  [-32003]: grpc.status.UNIMPLEMENTED,
+  [-32004]: grpc.status.UNIMPLEMENTED,
+  [-32009]: grpc.status.UNIMPLEMENTED,
+  [-32005]: grpc.status.INVALID_ARGUMENT,
+  [-32006]: grpc.status.INTERNAL,
+};
 
 const mapToError = (error: unknown): Partial<grpc.ServiceError> => {
-  const a2aError = error instanceof A2AError 
-    ? error 
-    : A2AError.internalError(error instanceof Error ? error.message : 'Unknown Error');
+  const a2aError =
+    error instanceof A2AError
+      ? error
+      : A2AError.internalError(error instanceof Error ? error.message : 'Unknown Error');
 
   return {
     message: a2aError.message,
@@ -260,8 +258,8 @@ const buildContext = async (
   userBuilder: gRpcHandlerOptions['userBuilder']
 ): Promise<ServerCallContext> => {
   const user = await userBuilder(call);
-  const extensionValues = call.metadata.get(HTTP_EXTENSION_HEADER.toLowerCase());
-  const extensionString = extensionValues.map(v => v.toString()).join(',');
+  const extensionHeaders = call.metadata.get(HTTP_EXTENSION_HEADER.toLowerCase());
+  const extensionString = extensionHeaders.map((v) => v.toString()).join(',');
 
   return new ServerCallContext(
     Extensions.parseServiceParameter(extensionString),

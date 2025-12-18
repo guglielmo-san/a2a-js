@@ -6,24 +6,15 @@ import {
   AgentExtension,
   AgentInterface,
   AgentProvider,
-  APIKeySecurityScheme,
   Artifact,
   AuthenticationInfo,
-  AuthorizationCodeOAuthFlow,
   CancelTaskRequest,
-  ClientCredentialsOAuthFlow,
   FilePart as ProtoFilePart,
   GetTaskPushNotificationConfigRequest,
   GetTaskRequest,
-  HTTPAuthSecurityScheme,
-  ImplicitOAuthFlow,
   Message,
-  MutualTlsSecurityScheme,
-  OAuth2SecurityScheme,
   OAuthFlows,
-  OpenIdConnectSecurityScheme,
   Part,
-  PasswordOAuthFlow,
   PushNotificationConfig,
   Role,
   Security,
@@ -32,7 +23,6 @@ import {
   SendMessageRequest,
   SendMessageResponse,
   StreamResponse,
-  StringList,
   Task,
   TaskArtifactUpdateEvent,
   TaskPushNotificationConfig,
@@ -339,7 +329,7 @@ export class ToProto {
         },
       };
     } else if (flows.password) {
-      return  {
+      return {
         flow: {
           $case: 'password',
           value: {
