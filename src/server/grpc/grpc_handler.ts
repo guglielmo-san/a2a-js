@@ -20,7 +20,8 @@ import {
 import { MessageSendParams, TaskIdParams } from '../../types.js';
 import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
-import { FromProto, ToProto } from '../../grpc/utils/proto_type_converter.js';
+import { FromProto } from '../../grpc/utils/from_proto.js';
+import { ToProto } from '../../grpc/utils/to_proto.js';
 import { gRpcTransportHandler } from '../transports/grpc/grpc_transport_handler.js';
 import { ServerCallContext } from '../context.js';
 import { Extensions } from '../../extensions.js';
@@ -225,13 +226,11 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
 const mapping: Record<number, grpc.status> = {
   [-32001]: grpc.status.NOT_FOUND,
   [-32002]: grpc.status.FAILED_PRECONDITION,
-  [-32007]: grpc.status.FAILED_PRECONDITION,
-  [-32008]: grpc.status.FAILED_PRECONDITION,
   [-32003]: grpc.status.UNIMPLEMENTED,
   [-32004]: grpc.status.UNIMPLEMENTED,
-  [-32009]: grpc.status.UNIMPLEMENTED,
   [-32005]: grpc.status.INVALID_ARGUMENT,
   [-32006]: grpc.status.INTERNAL,
+  [-32007]: grpc.status.FAILED_PRECONDITION,
 };
 
 const mapToError = (error: unknown): Partial<grpc.ServiceError> => {

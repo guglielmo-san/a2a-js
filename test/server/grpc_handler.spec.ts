@@ -4,7 +4,8 @@ import * as proto from '../../src/grpc/a2a.js';
 import { A2AError, A2ARequestHandler } from '../../src/server/index.js';
 import { grpcHandler } from '../../src/server/grpc/grpc_handler.js';
 import { AgentCard, HTTP_EXTENSION_HEADER, MessageSendParams, Task } from '../../src/index.js';
-import { FromProto, ToProto } from '../../src/grpc/utils/proto_type_converter.js';
+import { ToProto } from '../../src/grpc/utils/to_proto.js';
+import { FromProto } from '../../src/grpc/utils/from_proto.js';
 
 vi.mock('../../src/grpc/utils/proto_type_converter.js');
 
