@@ -185,7 +185,7 @@ describe('FromProto', () => {
       const result = FromProto.parts(part);
       expect(result).toEqual({
         kind: 'file',
-        file: { uri: 'file://path/to/file' },
+        file: { mimeType: 'text/plain', uri: 'file://path/to/file' },
       });
     });
 
@@ -200,7 +200,7 @@ describe('FromProto', () => {
       const result = FromProto.parts(part);
       expect(result).toEqual({
         kind: 'file',
-        file: { bytes: bytes.toString('base64') },
+        file: { bytes: bytes.toString('base64'), mimeType: 'text/plain' },
       });
     });
 

@@ -9,7 +9,6 @@ import {
   JSONRPCErrorResponse,
   JSONRPCSuccessResponse,
   JSONRPCResponse,
-  MessageSendParams,
 } from '../../types.js';
 import { A2AError } from '../error.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
