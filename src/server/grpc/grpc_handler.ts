@@ -32,7 +32,7 @@ import { A2AError } from '../error.js';
 /**
  * Options for configuring the gRPC handler.
  */
-export interface gRpcHandlerOptions {
+export interface grpcHandlerOptions {
   requestHandler: A2ARequestHandler;
   userBuilder: (
     call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>
@@ -47,7 +47,7 @@ export interface gRpcHandlerOptions {
  * @param requestHandler - The core A2A request handler for business logic.
  * @returns An object that implements the A2AServiceServer interface.
  */
-export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
+export function grpcHandler(options: grpcHandlerOptions): A2AServiceServer {
   const grpcTransportHandler = new gRpcTransportHandler(options.requestHandler);
 
   /**
@@ -248,7 +248,7 @@ const mapToError = (error: unknown): Partial<grpc.ServiceError> => {
 
 const buildContext = async (
   call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>,
-  userBuilder: gRpcHandlerOptions['userBuilder']
+  userBuilder: grpcHandlerOptions['userBuilder']
 ): Promise<ServerCallContext> => {
   const user = await userBuilder(call);
   const extensionHeaders = call.metadata.get(HTTP_EXTENSION_HEADER.toLowerCase());

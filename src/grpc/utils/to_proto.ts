@@ -28,6 +28,7 @@ import {
   ListTaskPushNotificationConfigResponse,
   AgentSkill,
 } from '../a2a.js';
+import { generatePushNotificationConfigName } from './id_decoding.js';
 
 export class ToProto {
   static agentCard(agentCard: types.AgentCard): AgentCard {
@@ -242,7 +243,10 @@ export class ToProto {
     config: types.TaskPushNotificationConfig
   ): TaskPushNotificationConfig {
     return {
-      name: `tasks/${config.taskId}/pushNotificationConfigs/${config.pushNotificationConfig.id || ''}`,
+      name: generatePushNotificationConfigName(
+        config.taskId,
+        config.pushNotificationConfig.id || ''
+      ),
       pushNotificationConfig: this.pushNotificationConfig(config.pushNotificationConfig),
     };
   }
