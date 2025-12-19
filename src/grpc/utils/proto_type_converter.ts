@@ -1,3 +1,4 @@
+import { A2AError } from '../../server/error.js';
 import * as types from '../../types.js';
 import {
   AgentCard,
@@ -46,7 +47,7 @@ export class FromProto {
   private static getTaskIdFromName(name: string): string {
     const match = name.match(TASK_ID_REGEX);
     if (!match) {
-      throw new Error(`Invalid or missing task ID in name: "${name}"`);
+      throw A2AError.invalidParams(`Invalid or missing task ID in name: "${name}"`);
     }
     return match[1];
   }
@@ -54,7 +55,7 @@ export class FromProto {
   private static getPushNotificationConfigIdFromName(name: string): string {
     const match = name.match(CONFIG_ID_REGEX);
     if (!match || match.length < 2) {
-      throw new Error(`Invalid or missing config ID in name: "${name}"`);
+      throw A2AError.invalidParams(`Invalid or missing config ID in name: "${name}"`);
     }
     return match[1];
   }
@@ -176,7 +177,7 @@ export class FromProto {
           },
         };
       }
-      throw new Error('Invalid file part type');
+      throw A2AError.invalidParams('Invalid file part type');
     }
 
     if (part.part?.$case === 'data') {
@@ -185,8 +186,7 @@ export class FromProto {
         data: part.part.value.data,
       };
     }
-
-    throw new Error('Invalid part type');
+    throw A2AError.invalidParams('Invalid part type');
   }
 
   static messageSendParams(request: SendMessageRequest): types.MessageSendParams {
@@ -312,7 +312,7 @@ export class ToProto {
           },
         };
       default:
-        return undefined;
+        throw A2AError.internalError(`Unsupported security scheme type`);
     }
   }
 
@@ -363,7 +363,7 @@ export class ToProto {
         },
       };
     } else {
-      return undefined;
+      throw A2AError.internalError(`Unsupported OAuth flows`);
     }
   }
 
@@ -468,7 +468,7 @@ export class ToProto {
         },
       };
     } else {
-      throw new Error('Invalid event type');
+      throw A2AError.internalError('Invalid event type');
     }
   }
 
@@ -598,7 +598,7 @@ export class ToProto {
           mimeType: part.file.mimeType ?? '',
         };
       } else {
-        throw new Error('Invalid file part');
+        throw A2AError.internalError('Invalid file part');
       }
       return {
         part: { $case: 'file', value: filePart },
@@ -610,7 +610,6 @@ export class ToProto {
         part: { $case: 'data', value: { data: part.data } },
       };
     }
-
-    throw new Error('Invalid part type');
+    throw A2AError.internalError('Invalid part type');
   }
 }
