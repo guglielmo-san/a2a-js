@@ -85,7 +85,6 @@ export class gRpcTransportHandler {
 
   /**
    * Resubscribes to task updates.
-   * Returns camelCase stream of task updates.
    * @throws {A2AError} UnsupportedOperation if streaming not supported
    */
   async resubscribe(
