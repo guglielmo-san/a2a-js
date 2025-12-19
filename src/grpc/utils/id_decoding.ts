@@ -17,7 +17,7 @@ export const generateTaskName = (taskId: string): string => {
 
 export const extractPushNotificationConfigId = (name: string): string => {
   const match = name.match(CONFIG_ID_REGEX);
-  if (!match || match.length < 2) {
+  if (!match) {
     throw A2AError.invalidParams(`Invalid or missing config ID in name: "${name}"`);
   }
   return match[1];

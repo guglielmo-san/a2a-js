@@ -256,15 +256,16 @@ export class ToProto {
       id: config.id ?? '',
       url: config.url,
       token: config.token ?? '',
-      authentication: config.authentication
-        ? this.authenticationInfo(config.authentication)
-        : undefined,
+      authentication: this.authenticationInfo(config.authentication),
     };
   }
 
   static authenticationInfo(
     authInfo: types.PushNotificationAuthenticationInfo
-  ): AuthenticationInfo {
+  ): AuthenticationInfo | undefined {
+    if (!authInfo) {
+      return undefined;
+    }
     return {
       schemes: authInfo.schemes,
       credentials: authInfo.credentials ?? '',
@@ -346,7 +347,11 @@ export class ToProto {
     }
   }
 
-  static message(message: types.Message): Message {
+  static message(message: types.Message): Message | undefined {
+    if (!message){
+      return undefined;
+    }
+
     return {
       messageId: message.messageId,
       content: message.parts.map((p) => this.parts(p)),
@@ -372,7 +377,7 @@ export class ToProto {
   static taskStatus(status: types.TaskStatus): TaskStatus {
     return {
       state: this.taskState(status.state),
-      update: status.message ? this.message(status.message) : undefined,
+      update: this.message(status.message),
       timestamp: status.timestamp ? new Date(status.timestamp) : undefined,
     };
   }

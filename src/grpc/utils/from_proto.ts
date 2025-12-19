@@ -54,6 +54,11 @@ export class FromProto {
   static setTaskPushNotificationConfigParams(
     request: CreateTaskPushNotificationConfigRequest
   ): types.TaskPushNotificationConfig {
+    if (!request.config?.pushNotificationConfig) {
+      throw A2AError.invalidParams(
+        'Request must include a `config` object with a `pushNotificationConfig`'
+      );
+    }
     return {
       taskId: extractTaskId(request.parent),
       pushNotificationConfig: this.pushNotificationConfig(request.config.pushNotificationConfig),
@@ -70,7 +75,11 @@ export class FromProto {
     };
   }
 
-  static message(message: Message): types.Message {
+  static message(message: Message): types.Message | undefined {
+    if(!message) {
+      return undefined;
+    }
+
     return {
       kind: 'message',
       messageId: message.messageId,
@@ -83,30 +92,38 @@ export class FromProto {
     };
   }
 
-  static configuration(configuration: SendMessageConfiguration): types.MessageSendConfiguration {
+  static configuration(configuration: SendMessageConfiguration): types.MessageSendConfiguration | undefined {
+    if (!configuration) {
+      return undefined;
+    }
+
     return {
       blocking: configuration.blocking,
       acceptedOutputModes: configuration.acceptedOutputModes,
-      pushNotificationConfig: configuration.pushNotification
-        ? this.pushNotificationConfig(configuration.pushNotification)
-        : undefined,
+      pushNotificationConfig: this.pushNotificationConfig(configuration.pushNotification),
     };
   }
 
-  static pushNotificationConfig(config: PushNotificationConfig): types.PushNotificationConfig {
+  static pushNotificationConfig(config: PushNotificationConfig): types.PushNotificationConfig | undefined {
+    if (!config) {
+      return undefined;
+    }
+
     return {
       id: config.id,
       url: config.url,
       token: config.token,
-      authentication: config.authentication
-        ? this.authenticationInfo(config.authentication)
-        : undefined,
+      authentication: this.authenticationInfo(config.authentication),
     };
   }
 
   static authenticationInfo(
     authInfo: AuthenticationInfo
-  ): types.PushNotificationAuthenticationInfo {
+  ): types.PushNotificationAuthenticationInfo | undefined {
+    if (!authInfo) {
+        return undefined;
+    }
+
     return {
       schemes: authInfo.schemes,
       credentials: authInfo.credentials,
@@ -128,6 +145,7 @@ export class FromProto {
           kind: 'file',
           file: {
             uri: filePart.file.value,
+            mimeType: filePart.mimeType,
           },
         };
       } else if (filePart.file?.$case === 'fileWithBytes') {
@@ -135,6 +153,7 @@ export class FromProto {
           kind: 'file',
           file: {
             bytes: filePart.file.value.toString('base64'),
+            mimeType: filePart.mimeType,
           },
         };
       }
@@ -153,7 +172,7 @@ export class FromProto {
   static messageSendParams(request: SendMessageRequest): types.MessageSendParams {
     return {
       message: this.message(request.request),
-      configuration: request.configuration ? this.configuration(request.configuration) : undefined,
+      configuration: this.configuration(request.configuration),
       metadata: request.metadata,
     };
   }
