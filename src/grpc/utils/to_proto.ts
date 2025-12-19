@@ -38,23 +38,23 @@ export class ToProto {
       description: agentCard.description,
       url: agentCard.url,
       preferredTransport: agentCard.preferredTransport ?? '',
-      additionalInterfaces: agentCard.additionalInterfaces.map((i) => this.agentInterface(i)),
-      provider: this.agentProvider(agentCard.provider),
+      additionalInterfaces: agentCard.additionalInterfaces?.map((i) => ToProto.agentInterface(i)),
+      provider: ToProto.agentProvider(agentCard.provider),
       version: agentCard.version,
       documentationUrl: agentCard.documentationUrl ?? '',
-      capabilities: this.agentCapabilities(agentCard.capabilities),
+      capabilities: ToProto.agentCapabilities(agentCard.capabilities),
       securitySchemes: Object.fromEntries(
-        Object.entries(agentCard.securitySchemes).map(([key, value]) => [
+        Object.entries(agentCard.securitySchemes)?.map(([key, value]) => [
           key,
-          this.securityScheme(value),
+          ToProto.securityScheme(value),
         ])
       ),
-      security: agentCard.security.map((s) => this.security(s)),
+      security: agentCard.security?.map((s) => ToProto.security(s)),
       defaultInputModes: agentCard.defaultInputModes,
       defaultOutputModes: agentCard.defaultOutputModes,
-      skills: agentCard.skills.map((s) => this.agentSkill(s)),
+      skills: agentCard.skills.map((s) => ToProto.agentSkill(s)),
       supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard ?? false,
-      signatures: agentCard.signatures.map((s) => this.signatures(s)),
+      signatures: agentCard.signatures?.map((s) => ToProto.signatures(s)),
     };
   }
 
@@ -75,7 +75,7 @@ export class ToProto {
       examples: skill.examples ?? [],
       inputModes: skill.inputModes ?? [],
       outputModes: skill.outputModes ?? [],
-      security: skill.security.map((s) => this.security(s)),
+      security: skill.security?.map((s) => ToProto.security(s)),
     };
   }
 
@@ -128,7 +128,7 @@ export class ToProto {
             $case: 'oauth2SecurityScheme',
             value: {
               description: scheme.description ?? '',
-              flows: this.oauthFlows(scheme.flows),
+              flows: ToProto.oauthFlows(scheme.flows),
               oauth2MetadataUrl: scheme.oauth2MetadataUrl ?? '',
             },
           },
@@ -217,7 +217,7 @@ export class ToProto {
     return {
       streaming: capabilities.streaming ?? false,
       pushNotifications: capabilities.pushNotifications ?? false,
-      extensions: capabilities.extensions.map((e) => this.extension(e)),
+      extensions: capabilities.extensions?.map((e) => ToProto.extension(e)),
     };
   }
 
@@ -234,7 +234,7 @@ export class ToProto {
     config: types.TaskPushNotificationConfig[]
   ): ListTaskPushNotificationConfigResponse {
     return {
-      configs: config.map((c) => this.taskPushNotificationConfig(c)),
+      configs: config.map((c) => ToProto.taskPushNotificationConfig(c)),
       nextPageToken: '',
     };
   }
@@ -247,7 +247,7 @@ export class ToProto {
         config.taskId,
         config.pushNotificationConfig.id || ''
       ),
-      pushNotificationConfig: this.pushNotificationConfig(config.pushNotificationConfig),
+      pushNotificationConfig: ToProto.pushNotificationConfig(config.pushNotificationConfig),
     };
   }
 
@@ -256,7 +256,7 @@ export class ToProto {
       id: config.id ?? '',
       url: config.url,
       token: config.token ?? '',
-      authentication: this.authenticationInfo(config.authentication),
+      authentication: ToProto.authenticationInfo(config.authentication),
     };
   }
 
@@ -279,28 +279,28 @@ export class ToProto {
       return {
         payload: {
           $case: 'msg',
-          value: this.message(event),
+          value: ToProto.message(event),
         },
       };
     } else if (event.kind === 'task') {
       return {
         payload: {
           $case: 'task',
-          value: this.task(event),
+          value: ToProto.task(event),
         },
       };
     } else if (event.kind === 'status-update') {
       return {
         payload: {
           $case: 'statusUpdate',
-          value: this.taskStatusUpdate(event),
+          value: ToProto.taskStatusUpdate(event),
         },
       };
     } else if (event.kind === 'artifact-update') {
       return {
         payload: {
           $case: 'artifactUpdate',
-          value: this.taskArtifactUpdate(event),
+          value: ToProto.taskArtifactUpdate(event),
         },
       };
     } else {
@@ -311,7 +311,7 @@ export class ToProto {
   static taskStatusUpdate(event: types.TaskStatusUpdateEvent): TaskStatusUpdateEvent {
     return {
       taskId: event.taskId,
-      status: this.taskStatus(event.status),
+      status: ToProto.taskStatus(event.status),
       contextId: event.contextId,
       metadata: event.metadata,
       final: event.final,
@@ -321,7 +321,7 @@ export class ToProto {
   static taskArtifactUpdate(event: types.TaskArtifactUpdateEvent): TaskArtifactUpdateEvent {
     return {
       taskId: event.taskId,
-      artifact: this.artifact(event.artifact),
+      artifact: ToProto.artifact(event.artifact),
       contextId: event.contextId,
       metadata: event.metadata,
       append: event.append ?? false,
@@ -334,14 +334,14 @@ export class ToProto {
       return {
         payload: {
           $case: 'msg',
-          value: this.message(params),
+          value: ToProto.message(params),
         },
       };
     } else if (params.kind === 'task') {
       return {
         payload: {
           $case: 'task',
-          value: this.task(params),
+          value: ToProto.task(params),
         },
       };
     }
@@ -354,7 +354,7 @@ export class ToProto {
 
     return {
       messageId: message.messageId,
-      content: message.parts.map((p) => this.parts(p)),
+      content: message.parts.map((p) => ToProto.parts(p)),
       contextId: message.contextId ?? '',
       taskId: message.taskId ?? '',
       role: message.role === 'agent' ? Role.ROLE_AGENT : Role.ROLE_USER,
@@ -367,17 +367,17 @@ export class ToProto {
     return {
       id: task.id,
       contextId: task.contextId,
-      status: this.taskStatus(task.status),
-      artifacts: task.artifacts.map((a) => this.artifact(a)),
-      history: task.history.map((m) => this.message(m)),
+      status: ToProto.taskStatus(task.status),
+      artifacts: task.artifacts?.map((a) => ToProto.artifact(a)),
+      history: task.history?.map((m) => ToProto.message(m)),
       metadata: task.metadata,
     };
   }
 
   static taskStatus(status: types.TaskStatus): TaskStatus {
     return {
-      state: this.taskState(status.state),
-      update: this.message(status.message),
+      state: ToProto.taskState(status.state),
+      update: ToProto.message(status.message),
       timestamp: status.timestamp ? new Date(status.timestamp) : undefined,
     };
   }
@@ -387,7 +387,7 @@ export class ToProto {
       artifactId: artifact.artifactId,
       name: artifact.name ?? '',
       description: artifact.description ?? '',
-      parts: artifact.parts.map((p) => this.parts(p)),
+      parts: artifact.parts.map((p) => ToProto.parts(p)),
       metadata: artifact.metadata,
       extensions: artifact.extensions ? artifact.extensions : [],
     };

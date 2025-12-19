@@ -61,7 +61,7 @@ export class FromProto {
     }
     return {
       taskId: extractTaskId(request.parent),
-      pushNotificationConfig: this.pushNotificationConfig(request.config.pushNotificationConfig),
+      pushNotificationConfig: FromProto.pushNotificationConfig(request.config.pushNotificationConfig),
     };
   }
 
@@ -83,7 +83,7 @@ export class FromProto {
     return {
       kind: 'message',
       messageId: message.messageId,
-      parts: message.content.map((p) => this.parts(p)),
+      parts: message.content.map((p) => FromProto.parts(p)),
       contextId: message.contextId,
       taskId: message.taskId,
       role: message.role === Role.ROLE_AGENT ? 'agent' : 'user',
@@ -102,7 +102,7 @@ export class FromProto {
     return {
       blocking: configuration.blocking,
       acceptedOutputModes: configuration.acceptedOutputModes,
-      pushNotificationConfig: this.pushNotificationConfig(configuration.pushNotification),
+      pushNotificationConfig: FromProto.pushNotificationConfig(configuration.pushNotification),
     };
   }
 
@@ -117,7 +117,7 @@ export class FromProto {
       id: config.id,
       url: config.url,
       token: config.token,
-      authentication: this.authenticationInfo(config.authentication),
+      authentication: FromProto.authenticationInfo(config.authentication),
     };
   }
 
@@ -175,8 +175,8 @@ export class FromProto {
 
   static messageSendParams(request: SendMessageRequest): types.MessageSendParams {
     return {
-      message: this.message(request.request),
-      configuration: this.configuration(request.configuration),
+      message: FromProto.message(request.request),
+      configuration: FromProto.configuration(request.configuration),
       metadata: request.metadata,
     };
   }
