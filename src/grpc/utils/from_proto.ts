@@ -1,6 +1,20 @@
-import { A2AError } from "../../server/error.js";
-import { CancelTaskRequest, GetTaskPushNotificationConfigRequest, ListTaskPushNotificationConfigRequest, GetTaskRequest, CreateTaskPushNotificationConfigRequest, DeleteTaskPushNotificationConfigRequest, Message, Role, SendMessageConfiguration, PushNotificationConfig, AuthenticationInfo, SendMessageRequest, Part } from "../a2a.js";
-import * as types from "../../types.js";
+import { A2AError } from '../../server/error.js';
+import {
+  CancelTaskRequest,
+  GetTaskPushNotificationConfigRequest,
+  ListTaskPushNotificationConfigRequest,
+  GetTaskRequest,
+  CreateTaskPushNotificationConfigRequest,
+  DeleteTaskPushNotificationConfigRequest,
+  Message,
+  Role,
+  SendMessageConfiguration,
+  PushNotificationConfig,
+  AuthenticationInfo,
+  SendMessageRequest,
+  Part,
+} from '../a2a.js';
+import * as types from '../../types.js';
 
 const TASK_ID_REGEX = /tasks\/([^/]+)/;
 const CONFIG_ID_REGEX = /pushNotificationConfigs\/([^/]+)/;
