@@ -79,7 +79,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.messageSendParams,
-        (params, context) => grpcTransportHandler.sendMessage(params, context),
+        grpcTransportHandler.sendMessage.bind(grpcTransportHandler),
         ToProto.messageSendResult
       );
     },
@@ -118,13 +118,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
           call.write(response);
         }
       } catch (error) {
-        const a2aError =
-          error instanceof A2AError
-            ? error
-            : A2AError.internalError(
-                error instanceof Error ? error.message : 'Internal server error'
-              );
-        call.emit('error', mapToError(a2aError));
+        call.emit('error', mapToError(error));
       } finally {
         call.end();
       }
@@ -192,7 +186,7 @@ export function grpcHandler(options: gRpcHandlerOptions): A2AServiceServer {
         call,
         callback,
         FromProto.taskQueryParams,
-        (params, context) => grpcTransportHandler.getTask(params, context),
+        grpcTransportHandler.getTask.bind(grpcTransportHandler),
         ToProto.task
       );
     },

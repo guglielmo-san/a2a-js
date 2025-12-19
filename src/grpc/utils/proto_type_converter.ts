@@ -37,13 +37,13 @@ import {
 } from '../a2a.js';
 
 const TASK_ID_REGEX = /tasks\/([^/]+)/;
-const CONFIG_ID_REGEX = /pushNotificationConfigs\/([^/]*)/;
+const CONFIG_ID_REGEX = /pushNotificationConfigs\/([^/]+)/;
 
 /**
  * Converts proto types to internal types.
  */
 export class FromProto {
-  private static _getTaskIdFromName(name: string): string {
+  private static getTaskIdFromName(name: string): string {
     const match = name.match(TASK_ID_REGEX);
     if (!match) {
       throw new Error(`Invalid or missing task ID in name: "${name}"`);
@@ -51,7 +51,7 @@ export class FromProto {
     return match[1];
   }
 
-  private static _getPushNotificationConfigIdFromName(name: string): string {
+  private static getPushNotificationConfigIdFromName(name: string): string {
     const match = name.match(CONFIG_ID_REGEX);
     if (!match || match.length < 2) {
       throw new Error(`Invalid or missing config ID in name: "${name}"`);
@@ -61,14 +61,14 @@ export class FromProto {
 
   static taskQueryParams(request: GetTaskRequest): types.TaskQueryParams {
     return {
-      id: this._getTaskIdFromName(request.name),
+      id: this.getTaskIdFromName(request.name),
       historyLength: request.historyLength,
     };
   }
 
   static taskIdParams(request: CancelTaskRequest): types.TaskIdParams {
     return {
-      id: this._getTaskIdFromName(request.name),
+      id: this.getTaskIdFromName(request.name),
     };
   }
 
@@ -76,8 +76,8 @@ export class FromProto {
     request: GetTaskPushNotificationConfigRequest
   ): types.GetTaskPushNotificationConfigParams {
     return {
-      id: this._getTaskIdFromName(request.name),
-      pushNotificationConfigId: this._getPushNotificationConfigIdFromName(request.name),
+      id: this.getTaskIdFromName(request.name),
+      pushNotificationConfigId: this.getPushNotificationConfigIdFromName(request.name),
     };
   }
 
@@ -85,7 +85,7 @@ export class FromProto {
     request: ListTaskPushNotificationConfigRequest
   ): types.ListTaskPushNotificationConfigParams {
     return {
-      id: this._getTaskIdFromName(request.parent),
+      id: this.getTaskIdFromName(request.parent),
     };
   }
 
@@ -93,7 +93,7 @@ export class FromProto {
     request: CreateTaskPushNotificationConfigRequest
   ): types.TaskPushNotificationConfig {
     return {
-      taskId: this._getTaskIdFromName(request.parent),
+      taskId: this.getTaskIdFromName(request.parent),
       pushNotificationConfig: this.pushNotificationConfig(request.config.pushNotificationConfig),
     };
   }
@@ -103,8 +103,8 @@ export class FromProto {
   ): types.DeleteTaskPushNotificationConfigParams {
     const name = request.name;
     return {
-      id: this._getTaskIdFromName(name),
-      pushNotificationConfigId: this._getPushNotificationConfigIdFromName(name),
+      id: this.getTaskIdFromName(name),
+      pushNotificationConfigId: this.getPushNotificationConfigIdFromName(name),
     };
   }
 
