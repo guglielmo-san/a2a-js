@@ -38,23 +38,23 @@ export class ToProto {
       description: agentCard.description,
       url: agentCard.url,
       preferredTransport: agentCard.preferredTransport ?? '',
-      additionalInterfaces: agentCard.additionalInterfaces?.map((i) => ToProto.agentInterface(i)),
+      additionalInterfaces: agentCard.additionalInterfaces ? agentCard.additionalInterfaces.map((i) => ToProto.agentInterface(i)) : [],
       provider: ToProto.agentProvider(agentCard.provider),
       version: agentCard.version,
       documentationUrl: agentCard.documentationUrl ?? '',
       capabilities: ToProto.agentCapabilities(agentCard.capabilities),
-      securitySchemes: Object.fromEntries(
-        Object.entries(agentCard.securitySchemes)?.map(([key, value]) => [
+      securitySchemes: agentCard.securitySchemes ? Object.fromEntries(
+        Object.entries(agentCard.securitySchemes).map(([key, value]) => [
           key,
           ToProto.securityScheme(value),
         ])
-      ),
-      security: agentCard.security?.map((s) => ToProto.security(s)),
+      ) : {},
+      security: agentCard.security ? agentCard.security.map((s) => ToProto.security(s)) : [],
       defaultInputModes: agentCard.defaultInputModes,
       defaultOutputModes: agentCard.defaultOutputModes,
       skills: agentCard.skills.map((s) => ToProto.agentSkill(s)),
       supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard ?? false,
-      signatures: agentCard.signatures?.map((s) => ToProto.signatures(s)),
+      signatures: agentCard.signatures ? agentCard.signatures.map((s) => ToProto.signatures(s)) : [],
     };
   }
 
@@ -75,7 +75,7 @@ export class ToProto {
       examples: skill.examples ?? [],
       inputModes: skill.inputModes ?? [],
       outputModes: skill.outputModes ?? [],
-      security: skill.security?.map((s) => ToProto.security(s)),
+      security: skill.security ? skill.security.map((s) => ToProto.security(s)) : [],
     };
   }
 
@@ -217,7 +217,7 @@ export class ToProto {
     return {
       streaming: capabilities.streaming ?? false,
       pushNotifications: capabilities.pushNotifications ?? false,
-      extensions: capabilities.extensions?.map((e) => ToProto.extension(e)),
+      extensions: capabilities.extensions ? capabilities.extensions.map((e) => ToProto.extension(e)) : [],
     };
   }
 
@@ -368,8 +368,8 @@ export class ToProto {
       id: task.id,
       contextId: task.contextId,
       status: ToProto.taskStatus(task.status),
-      artifacts: task.artifacts?.map((a) => ToProto.artifact(a)),
-      history: task.history?.map((m) => ToProto.message(m)),
+      artifacts: task.artifacts ? task.artifacts.map((a) => ToProto.artifact(a)) : [],
+      history: task.history ? task.history.map((m) => ToProto.message(m)) : [],
       metadata: task.metadata,
     };
   }
