@@ -61,7 +61,9 @@ export class FromProto {
     }
     return {
       taskId: extractTaskId(request.parent),
-      pushNotificationConfig: FromProto.pushNotificationConfig(request.config.pushNotificationConfig),
+      pushNotificationConfig: FromProto.pushNotificationConfig(
+        request.config.pushNotificationConfig
+      ),
     };
   }
 

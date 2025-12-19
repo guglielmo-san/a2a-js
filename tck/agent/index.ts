@@ -1,10 +1,5 @@
 import express from 'express';
-import {
-  Server,
-  ServerCredentials,
-  ServerUnaryCall,
-  sendUnaryData,
-} from "@grpc/grpc-js";
+import { Server, ServerCredentials } from '@grpc/grpc-js';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 
 import { AgentCard, Task, TaskStatusUpdateEvent, Message } from '../../src/index.js';
@@ -22,7 +17,6 @@ import {
   restHandler,
   UserBuilder,
 } from '../../src/server/express/index.js';
-import { serverErrorToStatus } from '@grpc/grpc-js/build/src/server-call.js';
 import { grpcHandler } from '../../src/server/grpc/grpc_handler.js';
 import { A2AServiceService } from '../../src/grpc/a2a.js';
 
@@ -240,12 +234,15 @@ async function main() {
 
   // 6. Start the gRPC server on a different port
   const GRPC_PORT = process.env.GRPC_PORT || 41242;
-  const grpcHandlerInstance = grpcHandler({ requestHandler, userBuilder: UserBuilder.noAuthentication });
+  const grpcHandlerInstance = grpcHandler({
+    requestHandler,
+    userBuilder: UserBuilder.noAuthentication,
+  });
   const server = new Server();
-  server.addService(A2AServiceService,  grpcHandlerInstance );
+  server.addService(A2AServiceService, grpcHandlerInstance);
   server.bindAsync(`localhost:${GRPC_PORT}`, ServerCredentials.createInsecure(), () => {
-  console.log(`[SUTAgent] gRPC server running at http://localhost:${GRPC_PORT}`);
-});
+    console.log(`[SUTAgent] gRPC server running at http://localhost:${GRPC_PORT}`);
+  });
 }
 
 main().catch(console.error);

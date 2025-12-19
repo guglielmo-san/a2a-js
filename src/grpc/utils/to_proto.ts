@@ -38,23 +38,29 @@ export class ToProto {
       description: agentCard.description,
       url: agentCard.url,
       preferredTransport: agentCard.preferredTransport ?? '',
-      additionalInterfaces: agentCard.additionalInterfaces ? agentCard.additionalInterfaces.map((i) => ToProto.agentInterface(i)) : [],
+      additionalInterfaces: agentCard.additionalInterfaces
+        ? agentCard.additionalInterfaces.map((i) => ToProto.agentInterface(i))
+        : [],
       provider: ToProto.agentProvider(agentCard.provider),
       version: agentCard.version,
       documentationUrl: agentCard.documentationUrl ?? '',
       capabilities: ToProto.agentCapabilities(agentCard.capabilities),
-      securitySchemes: agentCard.securitySchemes ? Object.fromEntries(
-        Object.entries(agentCard.securitySchemes).map(([key, value]) => [
-          key,
-          ToProto.securityScheme(value),
-        ])
-      ) : {},
+      securitySchemes: agentCard.securitySchemes
+        ? Object.fromEntries(
+            Object.entries(agentCard.securitySchemes).map(([key, value]) => [
+              key,
+              ToProto.securityScheme(value),
+            ])
+          )
+        : {},
       security: agentCard.security ? agentCard.security.map((s) => ToProto.security(s)) : [],
       defaultInputModes: agentCard.defaultInputModes,
       defaultOutputModes: agentCard.defaultOutputModes,
       skills: agentCard.skills.map((s) => ToProto.agentSkill(s)),
       supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard ?? false,
-      signatures: agentCard.signatures ? agentCard.signatures.map((s) => ToProto.signatures(s)) : [],
+      signatures: agentCard.signatures
+        ? agentCard.signatures.map((s) => ToProto.signatures(s))
+        : [],
     };
   }
 
@@ -217,7 +223,9 @@ export class ToProto {
     return {
       streaming: capabilities.streaming ?? false,
       pushNotifications: capabilities.pushNotifications ?? false,
-      extensions: capabilities.extensions ? capabilities.extensions.map((e) => ToProto.extension(e)) : [],
+      extensions: capabilities.extensions
+        ? capabilities.extensions.map((e) => ToProto.extension(e))
+        : [],
     };
   }
 
