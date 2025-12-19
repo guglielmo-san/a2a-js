@@ -348,7 +348,7 @@ export class ToProto {
   }
 
   static message(message: types.Message): Message | undefined {
-    if (!message){
+    if (!message) {
       return undefined;
     }
 

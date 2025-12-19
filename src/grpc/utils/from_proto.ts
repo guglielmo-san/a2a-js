@@ -76,7 +76,7 @@ export class FromProto {
   }
 
   static message(message: Message): types.Message | undefined {
-    if(!message) {
+    if (!message) {
       return undefined;
     }
 
@@ -92,7 +92,9 @@ export class FromProto {
     };
   }
 
-  static configuration(configuration: SendMessageConfiguration): types.MessageSendConfiguration | undefined {
+  static configuration(
+    configuration: SendMessageConfiguration
+  ): types.MessageSendConfiguration | undefined {
     if (!configuration) {
       return undefined;
     }
@@ -104,7 +106,9 @@ export class FromProto {
     };
   }
 
-  static pushNotificationConfig(config: PushNotificationConfig): types.PushNotificationConfig | undefined {
+  static pushNotificationConfig(
+    config: PushNotificationConfig
+  ): types.PushNotificationConfig | undefined {
     if (!config) {
       return undefined;
     }
@@ -121,7 +125,7 @@ export class FromProto {
     authInfo: AuthenticationInfo
   ): types.PushNotificationAuthenticationInfo | undefined {
     if (!authInfo) {
-        return undefined;
+      return undefined;
     }
 
     return {
