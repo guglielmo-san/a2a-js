@@ -94,6 +94,12 @@
   "peerDependenciesMeta": {
     "express": {
       "optional": true
+    },
+    "@grpc/grpc-js": {
+      "optional": true
+    },
+    "@bufbuild/protobuf": {
+      "optional": true
     }
   }
 }
