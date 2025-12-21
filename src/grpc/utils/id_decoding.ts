@@ -6,7 +6,7 @@ const CONFIG_ID_REGEX = /pushNotificationConfigs\/([^/]+)/;
 export const extractTaskId = (name: string): string => {
   const match = name.match(TASK_ID_REGEX);
   if (!match) {
-    throw A2AError.invalidParams(`Invalid or missing task ID in name: "${name}"`);
+    throw A2AError.invalidParams(`Invalid or missing task ID in: "${name}"`);
   }
   return match[1];
 };
@@ -18,7 +18,7 @@ export const generateTaskName = (taskId: string): string => {
 export const extractPushNotificationConfigId = (name: string): string => {
   const match = name.match(CONFIG_ID_REGEX);
   if (!match) {
-    throw A2AError.invalidParams(`Invalid or missing config ID in name: "${name}"`);
+    throw A2AError.invalidParams(`Invalid or missing config ID in: "${name}"`);
   }
   return match[1];
 };
