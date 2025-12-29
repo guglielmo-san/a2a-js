@@ -38,7 +38,8 @@ export class ToProto {
       description: agentCard.description,
       url: agentCard.url,
       preferredTransport: agentCard.preferredTransport ?? '',
-      additionalInterfaces: agentCard.additionalInterfaces?.map((i) => ToProto.agentInterface(i)) ?? [],
+      additionalInterfaces:
+        agentCard.additionalInterfaces?.map((i) => ToProto.agentInterface(i)) ?? [],
       provider: ToProto.agentProvider(agentCard.provider),
       version: agentCard.version,
       documentationUrl: agentCard.documentationUrl ?? '',

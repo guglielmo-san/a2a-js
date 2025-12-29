@@ -25,7 +25,7 @@ import { ToProto } from '../../grpc/utils/to_proto.js';
 import { GrpcTransportHandler } from '../transports/grpc/grpc_transport_handler.js';
 import { ServerCallContext } from '../context.js';
 import { Extensions } from '../../extensions.js';
-import { User, UnauthenticatedUser } from '../authentication/user.js';
+import { UserBuilder } from './common.js';
 import { HTTP_EXTENSION_HEADER } from '../../constants.js';
 import { A2AError } from '../error.js';
 
@@ -34,9 +34,7 @@ import { A2AError } from '../error.js';
  */
 export interface GrpcHandlerOptions {
   requestHandler: A2ARequestHandler;
-  userBuilder: (
-    call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>
-  ) => Promise<User | undefined>;
+  userBuilder: UserBuilder;
 }
 
 /**
@@ -252,16 +250,13 @@ const mapToError = (error: unknown): Partial<grpc.ServiceError> => {
 
 const buildContext = async (
   call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>,
-  userBuilder: GrpcHandlerOptions['userBuilder']
+  userBuilder: UserBuilder
 ): Promise<ServerCallContext> => {
   const user = await userBuilder(call);
   const extensionHeaders = call.metadata.get(HTTP_EXTENSION_HEADER);
   const extensionString = extensionHeaders.map((v) => v.toString()).join(',');
 
-  return new ServerCallContext(
-    Extensions.parseServiceParameter(extensionString),
-    user ?? new UnauthenticatedUser()
-  );
+  return new ServerCallContext(Extensions.parseServiceParameter(extensionString), user);
 };
 
 const buildMetadata = (context: ServerCallContext): grpc.Metadata => {

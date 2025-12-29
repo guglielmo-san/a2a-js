@@ -44,7 +44,7 @@ export function jsonRpcHandler(options: JsonRpcHandlerOptions): RequestHandler {
       const user = await options.userBuilder(req);
       const context = new ServerCallContext(
         Extensions.parseServiceParameter(req.header(HTTP_EXTENSION_HEADER)),
-        user ?? new UnauthenticatedUser()
+        user
       );
       const rpcResponseOrStream = await jsonRpcTransportHandler.handle(req.body, context);
 
