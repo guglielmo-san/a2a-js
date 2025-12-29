@@ -44,6 +44,13 @@ export interface GrpcHandlerOptions {
  *
  * @param requestHandler - The core A2A request handler for business logic.
  * @returns An object that implements the A2AServiceServer interface.
+ * 
+ * @example
+ * ```ts
+ * const server = new grpc.Server();
+ * const requestHandler = new DefaultRequestHandler(...);
+ * server.addService(A2AService, grpcHandler({ requestHandler, userBuilder: UserBuilder.noAuthentication }));
+ * ```
  */
 export function grpcHandler(options: GrpcHandlerOptions): A2AServiceServer {
   const grpcTransportHandler = new GrpcTransportHandler(options.requestHandler);
