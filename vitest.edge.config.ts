@@ -11,7 +11,6 @@ export default defineWorkersConfig(
         // gRpc test require Node.js-specific gRPC module
         'test/server/grpc/*.spec.ts',
         'test/e2e.spec.ts',
-        'test/server/rest_handler.spec.ts',
         'test/server/push_notification_integration.spec.ts',
         // Node modules should always be excluded
         '**/node_modules/**',
