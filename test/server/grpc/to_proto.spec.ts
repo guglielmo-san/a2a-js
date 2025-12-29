@@ -5,7 +5,7 @@ import * as proto from '../../../src/grpc/a2a.js';
 import * as idDecoding from '../../../src/grpc/utils/id_decoding.js';
 import { A2AError } from '../../../src/server/index.js';
 
-vi.mock('../../src/grpc/utils/id_decoding', () => ({
+vi.mock('../../../src/grpc/utils/id_decoding.js', () => ({
   generatePushNotificationConfigName: vi.fn(),
 }));
 

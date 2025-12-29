@@ -7,8 +7,8 @@ import { AgentCard, HTTP_EXTENSION_HEADER, MessageSendParams, Task } from '../..
 import { ToProto } from '../../../src/grpc/utils/to_proto.js';
 import { FromProto } from '../../../src/grpc/utils/from_proto.js';
 
-vi.mock('../../src/grpc/utils/from_proto.js');
-vi.mock('../../src/grpc/utils/to_proto.js');
+vi.mock('../../../src/grpc/utils/from_proto.js');
+vi.mock('../../../src/grpc/utils/to_proto.js');
 
 describe('grpcHandler', () => {
   let mockRequestHandler: A2ARequestHandler;
