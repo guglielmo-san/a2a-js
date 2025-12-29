@@ -38,9 +38,7 @@ export class ToProto {
       description: agentCard.description,
       url: agentCard.url,
       preferredTransport: agentCard.preferredTransport ?? '',
-      additionalInterfaces: agentCard.additionalInterfaces
-        ? agentCard.additionalInterfaces.map((i) => ToProto.agentInterface(i))
-        : [],
+      additionalInterfaces: agentCard.additionalInterfaces?.map((i) => ToProto.agentInterface(i)) ?? [],
       provider: ToProto.agentProvider(agentCard.provider),
       version: agentCard.version,
       documentationUrl: agentCard.documentationUrl ?? '',
@@ -53,14 +51,12 @@ export class ToProto {
             ])
           )
         : {},
-      security: agentCard.security ? agentCard.security.map((s) => ToProto.security(s)) : [],
+      security: agentCard.security?.map((s) => ToProto.security(s)) ?? [],
       defaultInputModes: agentCard.defaultInputModes,
       defaultOutputModes: agentCard.defaultOutputModes,
       skills: agentCard.skills.map((s) => ToProto.agentSkill(s)),
       supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard ?? false,
-      signatures: agentCard.signatures
-        ? agentCard.signatures.map((s) => ToProto.signatures(s))
-        : [],
+      signatures: agentCard.signatures?.map((s) => ToProto.signatures(s)) ?? [],
     };
   }
 
@@ -253,7 +249,7 @@ export class ToProto {
     return {
       name: generatePushNotificationConfigName(
         config.taskId,
-        config.pushNotificationConfig.id || ''
+        config.pushNotificationConfig.id ?? ''
       ),
       pushNotificationConfig: ToProto.pushNotificationConfig(config.pushNotificationConfig),
     };
@@ -365,10 +361,21 @@ export class ToProto {
       content: message.parts.map((p) => ToProto.parts(p)),
       contextId: message.contextId ?? '',
       taskId: message.taskId ?? '',
-      role: message.role === 'agent' ? Role.ROLE_AGENT : Role.ROLE_USER,
+      role: ToProto.role(message.role),
       metadata: message.metadata,
-      extensions: message.extensions ? message.extensions : [],
+      extensions: message.extensions ?? [],
     };
+  }
+
+  static role(role: string): Role {
+    switch (role) {
+      case 'agent':
+        return Role.ROLE_AGENT;
+      case 'user':
+        return Role.ROLE_USER;
+      default:
+        throw A2AError.internalError(`Invalid role`);
+    }
   }
 
   static task(task: types.Task): Task {
@@ -376,8 +383,8 @@ export class ToProto {
       id: task.id,
       contextId: task.contextId,
       status: ToProto.taskStatus(task.status),
-      artifacts: task.artifacts ? task.artifacts.map((a) => ToProto.artifact(a)) : [],
-      history: task.history ? task.history.map((m) => ToProto.message(m)) : [],
+      artifacts: task.artifacts?.map((a) => ToProto.artifact(a)) ?? [],
+      history: task.history?.map((m) => ToProto.message(m)) ?? [],
       metadata: task.metadata,
     };
   }

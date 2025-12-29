@@ -88,10 +88,21 @@ export class FromProto {
       parts: message.content.map((p) => FromProto.parts(p)),
       contextId: message.contextId,
       taskId: message.taskId,
-      role: message.role === Role.ROLE_AGENT ? 'agent' : 'user',
+      role: FromProto.role(message.role),
       metadata: message.metadata,
       extensions: message.extensions.length > 0 ? message.extensions : undefined,
     };
+  }
+
+  static role(role: Role): 'agent' | 'user' {
+    switch (role) {
+      case Role.ROLE_AGENT:
+        return 'agent';
+      case Role.ROLE_USER:
+        return 'user';
+      default:
+        throw A2AError.invalidParams(`Invalid role: ${role}`);
+    }
   }
 
   static configuration(
