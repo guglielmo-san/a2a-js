@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FromProto } from '../../src/grpc/utils/from_proto.js';
-import * as proto from '../../src/grpc/a2a.js';
-import * as idDecoding from '../../src/grpc/utils/id_decoding.js';
-import { A2AError } from '../../src/server/index.js';
+import { FromProto } from '../../../src/grpc/utils/from_proto.js';
+import * as proto from '../../../src/grpc/a2a.js';
+import * as idDecoding from '../../../src/grpc/utils/id_decoding.js';
+import { A2AError } from '../../../src/server/index.js';
 
 vi.mock('../../src/grpc/utils/id_decoding', () => ({
   extractTaskId: vi.fn(),

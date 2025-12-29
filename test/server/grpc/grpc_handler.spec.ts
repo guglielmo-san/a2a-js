@@ -1,11 +1,11 @@
 import { describe, it, beforeEach, afterEach, assert, expect, vi, Mock } from 'vitest';
 import * as grpc from '@grpc/grpc-js';
-import * as proto from '../../src/grpc/a2a.js';
-import { A2AError, A2ARequestHandler } from '../../src/server/index.js';
-import { grpcHandler } from '../../src/server/grpc/grpc_handler.js';
-import { AgentCard, HTTP_EXTENSION_HEADER, MessageSendParams, Task } from '../../src/index.js';
-import { ToProto } from '../../src/grpc/utils/to_proto.js';
-import { FromProto } from '../../src/grpc/utils/from_proto.js';
+import * as proto from '../../../src/grpc/a2a.js';
+import { A2AError, A2ARequestHandler } from '../../../src/server/index.js';
+import { grpcHandler } from '../../../src/server/grpc/grpc_handler.js';
+import { AgentCard, HTTP_EXTENSION_HEADER, MessageSendParams, Task } from '../../../src/index.js';
+import { ToProto } from '../../../src/grpc/utils/to_proto.js';
+import { FromProto } from '../../../src/grpc/utils/from_proto.js';
 
 vi.mock('../../src/grpc/utils/from_proto.js');
 vi.mock('../../src/grpc/utils/to_proto.js');
