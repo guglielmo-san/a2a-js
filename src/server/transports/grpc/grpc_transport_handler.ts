@@ -16,7 +16,7 @@ import {
   GetTaskPushNotificationConfigParams,
 } from '../../../types.js';
 
-export class gRpcTransportHandler {
+export class GrpcTransportHandler {
   private requestHandler: A2ARequestHandler;
 
   constructor(requestHandler: A2ARequestHandler) {

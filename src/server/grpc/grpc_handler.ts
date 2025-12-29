@@ -22,7 +22,7 @@ import { Empty } from '../../grpc/google/protobuf/empty.js';
 import { A2ARequestHandler } from '../request_handler/a2a_request_handler.js';
 import { FromProto } from '../../grpc/utils/from_proto.js';
 import { ToProto } from '../../grpc/utils/to_proto.js';
-import { gRpcTransportHandler } from '../transports/grpc/grpc_transport_handler.js';
+import { GrpcTransportHandler } from '../transports/grpc/grpc_transport_handler.js';
 import { ServerCallContext } from '../context.js';
 import { Extensions } from '../../extensions.js';
 import { User, UnauthenticatedUser } from '../authentication/user.js';
@@ -32,7 +32,7 @@ import { A2AError } from '../error.js';
 /**
  * Options for configuring the gRPC handler.
  */
-export interface grpcHandlerOptions {
+export interface GrpcHandlerOptions {
   requestHandler: A2ARequestHandler;
   userBuilder: (
     call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>
@@ -47,8 +47,8 @@ export interface grpcHandlerOptions {
  * @param requestHandler - The core A2A request handler for business logic.
  * @returns An object that implements the A2AServiceServer interface.
  */
-export function grpcHandler(options: grpcHandlerOptions): A2AServiceServer {
-  const grpcTransportHandler = new gRpcTransportHandler(options.requestHandler);
+export function grpcHandler(options: GrpcHandlerOptions): A2AServiceServer {
+  const grpcTransportHandler = new GrpcTransportHandler(options.requestHandler);
 
   /**
    * Helper to wrap Unary calls with common logic (context, metadata, error handling)
@@ -252,7 +252,7 @@ const mapToError = (error: unknown): Partial<grpc.ServiceError> => {
 
 const buildContext = async (
   call: grpc.ServerUnaryCall<unknown, unknown> | grpc.ServerWritableStream<unknown, unknown>,
-  userBuilder: grpcHandlerOptions['userBuilder']
+  userBuilder: GrpcHandlerOptions['userBuilder']
 ): Promise<ServerCallContext> => {
   const user = await userBuilder(call);
   const extensionHeaders = call.metadata.get(HTTP_EXTENSION_HEADER);

@@ -4,4 +4,4 @@
  */
 
 export { grpcHandler } from './grpc_handler.js';
-export type { grpcHandlerOptions } from './grpc_handler.js';
+export type { GrpcHandlerOptions as grpcHandlerOptions } from './grpc_handler.js';
