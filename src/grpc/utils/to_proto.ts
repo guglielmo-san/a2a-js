@@ -27,8 +27,15 @@ import {
   TaskStatusUpdateEvent,
   ListTaskPushNotificationConfigResponse,
   AgentSkill,
+  SendMessageRequest,
+  SendMessageConfiguration,
+  GetTaskPushNotificationConfigRequest,
+  ListTaskPushNotificationConfigRequest,
+  DeleteTaskPushNotificationConfigRequest,
+  GetTaskRequest,
+  CancelTaskRequest,
 } from '../a2a.js';
-import { generatePushNotificationConfigName } from './id_decoding.js';
+import { generatePushNotificationConfigName, generateTaskName } from './id_decoding.js';
 
 export class ToProto {
   static agentCard(agentCard: types.AgentCard): AgentCard {
@@ -242,6 +249,32 @@ export class ToProto {
       configs: config.map((c) => ToProto.taskPushNotificationConfig(c)),
       nextPageToken: '',
     };
+  }
+
+  static getTaskPushNotificationConfigRequest(
+    config: types.GetTaskPushNotificationConfigParams
+  ): GetTaskPushNotificationConfigRequest {
+    return {
+      name: generatePushNotificationConfigName(config.id, config.pushNotificationConfigId),
+    };
+  }
+
+  static listTaskPushNotificationConfigRequest(
+    config: types.ListTaskPushNotificationConfigParams
+  ): ListTaskPushNotificationConfigRequest {
+    return {
+      parent: generateTaskName(config.id),
+      pageToken: '',
+      pageSize: 0,
+    };
+  }
+
+  static deleteTaskPushNotificationConfigRequest(
+    config: types.DeleteTaskPushNotificationConfigParams
+  ): DeleteTaskPushNotificationConfigRequest {
+    return {
+      name: generatePushNotificationConfigName(config.id, config.pushNotificationConfigId),
+    }
   }
 
   static taskPushNotificationConfig(
@@ -467,5 +500,39 @@ export class ToProto {
       };
     }
     throw A2AError.internalError('Invalid part type');
+  }
+
+  static messageSendParams(params: types.MessageSendParams): SendMessageRequest {
+    return {
+      request: ToProto.message(params.message),
+      configuration: ToProto.configuration(params.configuration),
+      metadata: params.metadata,
+    };
+  }
+
+  static configuration(configuration: types.MessageSendConfiguration): SendMessageConfiguration {
+    if (!configuration) {
+      return undefined;
+    }
+
+    return {
+      blocking: configuration.blocking ?? false,
+      acceptedOutputModes: configuration.acceptedOutputModes ?? [],
+      pushNotification: ToProto.pushNotificationConfig(configuration.pushNotificationConfig),
+      historyLength: configuration.historyLength ?? 0,
+    };
+  }
+
+  static getTaskRequest(params: types.TaskQueryParams): GetTaskRequest {
+    return {
+      name: generateTaskName(params.id),
+      historyLength: params.historyLength ?? 0,
+    };
+  }
+
+  static cancelTaskRequest(params: types.TaskIdParams): CancelTaskRequest {
+    return {
+      name: generateTaskName(params.id),
+    };
   }
 }

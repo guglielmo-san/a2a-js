@@ -13,6 +13,21 @@ import {
   AuthenticationInfo,
   SendMessageRequest,
   Part,
+  SendMessageResponse,
+  Task,
+  TaskStatus,
+  TaskState,
+  Artifact,
+  TaskPushNotificationConfig,
+  ListTaskPushNotificationConfigResponse,
+  AgentCard,
+  Security,
+  StringList,
+  SecurityScheme,
+  AgentSkill,
+  AgentCardSignature,
+  TaskStatusUpdateEvent,
+  TaskArtifactUpdateEvent,
 } from '../a2a.js';
 import * as types from '../../types.js';
 import { extractTaskId, extractTaskAndPushNotificationConfigId } from './id_decoding.js';
@@ -194,4 +209,164 @@ export class FromProto {
       metadata: request.metadata,
     };
   }
+
+  static sendMessageResult(response: SendMessageResponse): types.Task | types.Message {
+    if (response.payload?.$case === 'task') {
+      return FromProto.task(response.payload.value);
+    } else if (response.payload?.$case === 'msg') {
+      return FromProto.message(response.payload.value);
+    }
+    throw A2AError.invalidParams('Invalid SendMessageResponse: missing result');
+  }
+
+  static task(task: Task): types.Task {
+    return {
+      kind: 'task',
+      id: task.id,
+      status: FromProto.taskStatus(task.status),
+      contextId: task.contextId,
+      artifacts: task.artifacts?.map((a) => FromProto.artifact(a)),
+      history: task.history?.map((h) => FromProto.message(h)),
+      metadata: task.metadata,
+    };
+  }
+
+  static taskStatus(status: TaskStatus): types.TaskStatus {
+    return {
+      message: FromProto.message(status.update),
+      state: FromProto.taskState(status.state),
+      timestamp: status.timestamp?.toDateString(),
+    };
+  }
+
+  static taskState(state: TaskState): types.TaskState {
+    switch (state) {
+      case TaskState.TASK_STATE_SUBMITTED:
+        return 'submitted';
+      case TaskState.TASK_STATE_WORKING:
+        return 'working';
+      case TaskState.TASK_STATE_INPUT_REQUIRED:
+        return 'input-required';
+      case TaskState.TASK_STATE_COMPLETED:
+        return 'completed';
+      case TaskState.TASK_STATE_CANCELLED:
+        return 'canceled';
+      case TaskState.TASK_STATE_FAILED:
+        return 'failed';
+      case TaskState.TASK_STATE_REJECTED:
+        return 'rejected';
+      case TaskState.TASK_STATE_AUTH_REQUIRED:
+        return 'auth-required';
+      case TaskState.TASK_STATE_UNSPECIFIED:
+        return 'unknown';
+      default:
+        throw A2AError.invalidParams(`Invalid task state: ${state}`);
+    }
+  }
+
+  static artifact(artifact: Artifact): types.Artifact {
+    return {
+      artifactId: artifact.artifactId,
+      name: artifact.name,
+      description: artifact.description,
+      parts: artifact.parts.map((p) => FromProto.parts(p)),
+      metadata: artifact.metadata,
+    };
+  }
+
+  static getTaskPushNoticationConfig(request: TaskPushNotificationConfig): types.TaskPushNotificationConfig {
+    return {
+      taskId: extractTaskId(request.name),
+      pushNotificationConfig: FromProto.pushNotificationConfig(request.pushNotificationConfig),
+    };
+  }
+
+  static listTaskPushNotificationConfig(request: ListTaskPushNotificationConfigResponse): types.TaskPushNotificationConfig[] {
+    return request.configs.map((c) => FromProto.getTaskPushNoticationConfig(c));
+  }
+
+  static agentCard(agentCard: AgentCard): types.AgentCard {
+    return {
+      additionalInterfaces: agentCard.additionalInterfaces,
+      capabilities: agentCard.capabilities,
+      defaultInputModes: agentCard.defaultInputModes,
+      defaultOutputModes: agentCard.defaultOutputModes,
+      description: agentCard.description,
+      documentationUrl: agentCard.documentationUrl,
+      name: agentCard.name,
+      preferredTransport: agentCard.preferredTransport,
+      provider: agentCard.provider,
+      protocolVersion: agentCard.protocolVersion,
+      security: agentCard.security?.map(s => FromProto.security(s)),
+      securitySchemes: FromProto.securitySchemes(agentCard.securitySchemes),
+      skills: agentCard.skills.map(s => FromProto.skills(s)),
+      signatures: agentCard.signatures?.map(s => FromProto.signatures(s)),
+      supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard,
+      url: agentCard.url,
+      version: agentCard.version,
+    }
+  }
+
+  static security(security: Security): { [k: string]: string[] } {
+  return Object.fromEntries(
+    Object.entries(security.schemes).map(([key, value]) => [
+      key, 
+      value as unknown as string[]
+    ])
+  );
+}
+
+static securitySchemes(securitySchemes: SecurityScheme): {
+    [k: string]: types.SecurityScheme;
+  } {
+    return Object.fromEntries(
+      Object.entries(securitySchemes).map(([key, value]) => [
+        key,
+        value,
+      ])
+    );
+  }
+
+  static skills(skill: AgentSkill): types.AgentSkill {
+    return {
+      id: skill.id,
+      name: skill.name,
+      description: skill.description,
+      tags: skill.tags,
+      examples: skill.examples,
+      inputModes: skill.inputModes,
+      outputModes: skill.outputModes,
+      security: skill.security?.map(s => FromProto.security(s)),
+    }
+  }
+
+  static signatures(signatures: AgentCardSignature): types.AgentCardSignature {
+    return {
+      protected: signatures.protected,
+      signature: signatures.signature,
+      header: signatures.header,
+    } 
+}
+
+static taskStatusUpdate(event: TaskStatusUpdateEvent): types.TaskStatusUpdateEvent {    
+  return {
+    kind: 'status-update',
+    taskId: event.taskId,
+    status: FromProto.taskStatus(event.status),
+    contextId: event.contextId,
+    metadata: event.metadata,
+    final: event.final,
+  }
+}
+
+static taskArtifactUpdate(event: TaskArtifactUpdateEvent): types.TaskArtifactUpdateEvent {
+  return {
+    kind: 'artifact-update',
+    taskId: event.taskId,
+    artifact: FromProto.artifact(event.artifact),
+    contextId: event.contextId,
+    metadata: event.metadata,
+    lastChunk: event.lastChunk,
+  }
+}
 }
