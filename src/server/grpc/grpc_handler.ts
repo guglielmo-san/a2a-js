@@ -44,7 +44,7 @@ export interface GrpcHandlerOptions {
  *
  * @param requestHandler - The core A2A request handler for business logic.
  * @returns An object that implements the A2AServiceServer interface.
- * 
+ *
  * @example
  * ```ts
  * const server = new grpc.Server();
