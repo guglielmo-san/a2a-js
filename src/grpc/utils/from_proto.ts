@@ -15,7 +15,7 @@ import {
   Part,
 } from '../a2a.js';
 import * as types from '../../types.js';
-import { extractTaskId, extractPushNotificationConfigId } from './id_decoding.js';
+import { extractTaskId, extractTaskAndPushNotificationConfigId } from './id_decoding.js';
 
 /**
  * Converts proto types to internal types.
@@ -37,9 +37,10 @@ export class FromProto {
   static getTaskPushNotificationConfigParams(
     request: GetTaskPushNotificationConfigRequest
   ): types.GetTaskPushNotificationConfigParams {
+    const { taskId, configId } = extractTaskAndPushNotificationConfigId(request.name);
     return {
-      id: extractTaskId(request.name),
-      pushNotificationConfigId: extractPushNotificationConfigId(request.name),
+      id: taskId,
+      pushNotificationConfigId: configId,
     };
   }
 
@@ -70,10 +71,10 @@ export class FromProto {
   static deleteTaskPushNotificationConfigParams(
     request: DeleteTaskPushNotificationConfigRequest
   ): types.DeleteTaskPushNotificationConfigParams {
-    const name = request.name;
+    const { taskId, configId } = extractTaskAndPushNotificationConfigId(request.name);
     return {
-      id: extractTaskId(name),
-      pushNotificationConfigId: extractPushNotificationConfigId(name),
+      id: taskId,
+      pushNotificationConfigId: configId,
     };
   }
 

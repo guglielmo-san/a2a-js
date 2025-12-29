@@ -6,13 +6,13 @@ import { A2AError } from '../../../src/server/index.js';
 
 vi.mock('../../../src/grpc/utils/id_decoding.js', () => ({
   extractTaskId: vi.fn(),
-  extractPushNotificationConfigId: vi.fn(),
+  extractTaskAndPushNotificationConfigId: vi.fn(),
 }));
 
 describe('FromProto', () => {
   beforeEach(() => {
     vi.mocked(idDecoding.extractTaskId).mockReturnValue('task-123');
-    vi.mocked(idDecoding.extractPushNotificationConfigId).mockReturnValue('pnc-456');
+    vi.mocked(idDecoding.extractTaskAndPushNotificationConfigId).mockReturnValue({ taskId: 'task-123', configId: 'pnc-456'});
   });
 
   it('should convert GetTaskRequest to taskQueryParams', () => {
@@ -44,8 +44,7 @@ describe('FromProto', () => {
       name: 'tasks/task-123/pushNotificationConfigs/pnc-456',
     };
     const result = FromProto.getTaskPushNotificationConfigParams(request);
-    expect(idDecoding.extractTaskId).toHaveBeenCalledWith(request.name);
-    expect(idDecoding.extractPushNotificationConfigId).toHaveBeenCalledWith(request.name);
+    expect(idDecoding.extractTaskAndPushNotificationConfigId).toHaveBeenCalledWith(request.name);
     expect(result).toEqual({
       id: 'task-123',
       pushNotificationConfigId: 'pnc-456',
@@ -97,8 +96,7 @@ describe('FromProto', () => {
       name: 'tasks/task-123/pushNotificationConfigs/pnc-456',
     };
     const result = FromProto.deleteTaskPushNotificationConfigParams(request);
-    expect(idDecoding.extractTaskId).toHaveBeenCalledWith(request.name);
-    expect(idDecoding.extractPushNotificationConfigId).toHaveBeenCalledWith(request.name);
+    expect(idDecoding.extractTaskAndPushNotificationConfigId).toHaveBeenCalledWith(request.name);
     expect(result).toEqual({
       id: 'task-123',
       pushNotificationConfigId: 'pnc-456',
