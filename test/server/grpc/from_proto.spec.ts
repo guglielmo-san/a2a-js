@@ -12,7 +12,10 @@ vi.mock('../../../src/grpc/utils/id_decoding.js', () => ({
 describe('FromProto', () => {
   beforeEach(() => {
     vi.mocked(idDecoding.extractTaskId).mockReturnValue('task-123');
-    vi.mocked(idDecoding.extractTaskAndPushNotificationConfigId).mockReturnValue({ taskId: 'task-123', configId: 'pnc-456'});
+    vi.mocked(idDecoding.extractTaskAndPushNotificationConfigId).mockReturnValue({
+      taskId: 'task-123',
+      configId: 'pnc-456',
+    });
   });
 
   it('should convert GetTaskRequest to taskQueryParams', () => {
