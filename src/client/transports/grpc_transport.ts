@@ -5,6 +5,7 @@ import {
   Metadata,
   ClientUnaryCall,
   ClientReadableStream,
+  ChannelCredentials
 } from '@grpc/grpc-js';
 import { TransportProtocolName } from '../../core.js';
 import { A2AServiceClient, StreamResponse } from '../../grpc/a2a.js';
@@ -50,18 +51,17 @@ type GrpcStreamCall<TReq, TRes> = (
 
 export interface GrpcTransportOptions {
   endpoint: string;
-  gprcCallOptions?: Partial<CallOptions>;
+  grpcChannelCredentials?: ChannelCredentials;
+  grpcCallOptions?: Partial<CallOptions>;
 }
 
 export class GrpcTransport implements Transport {
-  private readonly gprcCallOptions?: Partial<CallOptions>;
-  private readonly endpoint: string;
+  private readonly grpcCallOptions?: Partial<CallOptions>;
   private readonly grpcClient: A2AServiceClient;
 
   constructor(options: GrpcTransportOptions) {
-    this.endpoint = options.endpoint;
-    this.gprcCallOptions = options.gprcCallOptions;
-    this.grpcClient = new A2AServiceClient(this.endpoint, credentials.createInsecure());
+    this.grpcCallOptions = options.grpcCallOptions;
+    this.grpcClient = new A2AServiceClient(options.endpoint, options.grpcChannelCredentials ?? credentials.createInsecure());
   }
 
   async getExtendedAgentCard(options?: RequestOptions): Promise<AgentCard> {
@@ -188,11 +188,11 @@ export class GrpcTransport implements Transport {
     converter: (res: TRes) => TResponse
   ): Promise<TResponse> {
     return new Promise((resolve, reject) => {
-      const clientMethod = this.grpcClient[method] as GrpcUnaryCall<TReq, TRes>;
+      const clientMethod = this.grpcClient[method] as unknown as GrpcUnaryCall<TReq, TRes>;
       clientMethod(
         parser(params),
         this._buildMetadata(options),
-        this.gprcCallOptions ?? {},
+        this.grpcCallOptions ?? {},
         (error, response) => {
           if (error) {
             if (this.isA2AServiceError(error)) {
@@ -221,7 +221,7 @@ export class GrpcTransport implements Transport {
     const streamResponse = clientMethod(
       parser(params),
       this._buildMetadata(options),
-      this.gprcCallOptions ?? {}
+      this.grpcCallOptions ?? {}
     );
     try {
       for await (const response of streamResponse) {
@@ -303,6 +303,7 @@ export class GrpcTransport implements Transport {
 }
 
 export class GrpcTransportFactoryOptions {
+  grpcChannelCredentials?: ChannelCredentials;
   grpcCallOptions?: Partial<CallOptions>;
 }
 
@@ -318,7 +319,8 @@ export class GrpcTransportFactory implements TransportFactory {
   async create(url: string, _agentCard: AgentCard): Promise<Transport> {
     return new GrpcTransport({
       endpoint: url,
-      gprcCallOptions: this.options?.grpcCallOptions,
+      grpcChannelCredentials: this.options?.grpcChannelCredentials,
+      grpcCallOptions: this.options?.grpcCallOptions,
     });
   }
 }
