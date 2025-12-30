@@ -27,6 +27,7 @@ import {
   AgentCardSignature,
   TaskStatusUpdateEvent,
   TaskArtifactUpdateEvent,
+  OAuthFlows,
 } from '../a2a.js';
 import * as types from '../../types.js';
 import { extractTaskId, extractTaskAndPushNotificationConfigId } from './id_decoding.js';
@@ -301,7 +302,14 @@ export class FromProto {
       provider: agentCard.provider,
       protocolVersion: agentCard.protocolVersion,
       security: agentCard.security?.map((s) => FromProto.security(s)),
-      securitySchemes: FromProto.securitySchemes(agentCard.securitySchemes),
+      securitySchemes: agentCard.securitySchemes
+        ? Object.fromEntries(
+            Object.entries(agentCard.securitySchemes).map(([key, value]) => [
+              key,
+              FromProto.securityScheme(value),
+            ])
+          )
+        : {},
       skills: agentCard.skills.map((s) => FromProto.skills(s)),
       signatures: agentCard.signatures?.map((s) => FromProto.signatures(s)),
       supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard,
@@ -312,14 +320,87 @@ export class FromProto {
 
   static security(security: Security): { [k: string]: string[] } {
     return Object.fromEntries(
-      Object.entries(security.schemes).map(([key, value]) => [key, value as unknown as string[]])
+      Object.entries(security.schemes).map(([key, value]) => [key, value.list])
     );
   }
 
-  static securitySchemes(securitySchemes: SecurityScheme): {
-    [k: string]: types.SecurityScheme;
-  } {
-    return Object.fromEntries(Object.entries(securitySchemes).map(([key, value]) => [key, value]));
+  static securityScheme(securitySchemes: SecurityScheme): types.SecurityScheme {
+    switch (securitySchemes.scheme?.$case) {
+      case 'apiKeySecurityScheme':
+        return {
+          type: 'apiKey',
+          name: securitySchemes.scheme.value.name,
+          in: securitySchemes.scheme.value.location as 'query' | 'header' | 'cookie',
+          description: securitySchemes.scheme.value.description,
+        };
+      case 'httpAuthSecurityScheme':
+        return {
+          type: 'http',
+          scheme: securitySchemes.scheme.value.scheme,
+          bearerFormat: securitySchemes.scheme.value.bearerFormat,
+          description: securitySchemes.scheme.value.description,
+        };
+      case 'mtlsSecurityScheme':
+        return {
+          type: 'mutualTLS',
+          description: securitySchemes.scheme.value.description,
+        };
+      case 'oauth2SecurityScheme':
+        return {
+          type: 'oauth2',
+          description: securitySchemes.scheme.value.description,
+          flows: FromProto.oauthFlows(securitySchemes.scheme.value.flows),
+          oauth2MetadataUrl: securitySchemes.scheme.value.oauth2MetadataUrl,
+        };
+      case 'openIdConnectSecurityScheme':
+        return {
+          type: 'openIdConnect',
+          description: securitySchemes.scheme.value.description,
+          openIdConnectUrl: securitySchemes.scheme.value.openIdConnectUrl,
+        };
+      default:
+        throw A2AError.internalError(`Unsupported security scheme type`);
+    }
+  }
+
+  static oauthFlows(flows: OAuthFlows): types.OAuthFlows {
+    switch (flows.flow?.$case) {
+      case 'implicit':
+        return {
+          implicit: {
+            authorizationUrl: flows.flow.value.authorizationUrl,
+            scopes: flows.flow.value.scopes,
+            refreshUrl: flows.flow.value.refreshUrl,
+          },
+        };
+      case 'password':
+        return {
+          password: {
+            refreshUrl: flows.flow.value.refreshUrl,
+            scopes: flows.flow.value.scopes,
+            tokenUrl: flows.flow.value.tokenUrl,
+          },
+        };
+      case 'authorizationCode':
+        return {
+          authorizationCode: {
+            refreshUrl: flows.flow.value.refreshUrl,
+            authorizationUrl: flows.flow.value.authorizationUrl,
+            scopes: flows.flow.value.scopes,
+            tokenUrl: flows.flow.value.tokenUrl,
+          },
+        };
+      case 'clientCredentials':
+        return {
+          clientCredentials: {
+            refreshUrl: flows.flow.value.refreshUrl,
+            scopes: flows.flow.value.scopes,
+            tokenUrl: flows.flow.value.tokenUrl,
+          },
+        };
+      default:
+        throw A2AError.internalError(`Unsupported OAuth flows`);
+    }
   }
 
   static skills(skill: AgentSkill): types.AgentSkill {

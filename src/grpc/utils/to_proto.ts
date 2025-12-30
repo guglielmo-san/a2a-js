@@ -35,6 +35,7 @@ import {
   GetTaskRequest,
   CancelTaskRequest,
   TaskSubscriptionRequest,
+  CreateTaskPushNotificationConfigRequest,
 } from '../a2a.js';
 import { generatePushNotificationConfigName, generateTaskName } from './id_decoding.js';
 
@@ -287,6 +288,16 @@ export class ToProto {
         config.pushNotificationConfig.id ?? ''
       ),
       pushNotificationConfig: ToProto.pushNotificationConfig(config.pushNotificationConfig),
+    };
+  }
+
+  static taskPushNotificationConfigCreate(
+    config: types.TaskPushNotificationConfig
+  ): CreateTaskPushNotificationConfigRequest {
+    return {
+      parent: generateTaskName(config.taskId),
+      config: ToProto.taskPushNotificationConfig(config),
+      configId: config.pushNotificationConfig.id ?? '',
     };
   }
 

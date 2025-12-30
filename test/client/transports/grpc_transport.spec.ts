@@ -49,6 +49,7 @@ vi.mock('../../../src/grpc/utils/to_proto.js', () => ({
     getTaskRequest: vi.fn((x) => x),
     cancelTaskRequest: vi.fn((x) => x),
     taskIdParams: vi.fn((x) => x),
+    taskPushNotificationConfigCreate: vi.fn((x) => x),
   },
 }));
 
@@ -98,7 +99,7 @@ describe('GrpcTransport', () => {
 
   beforeEach(() => {
     mockGrpcClient = new A2AServiceClient(endpoint, credentials.createInsecure());
-    transport = new GrpcTransport({ endpoint, grpcClient: mockGrpcClient});
+    transport = new GrpcTransport({ endpoint, grpcClient: mockGrpcClient });
   });
 
   afterEach(() => {

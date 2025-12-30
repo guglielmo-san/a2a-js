@@ -62,10 +62,12 @@ export class GrpcTransport implements Transport {
 
   constructor(options: GrpcTransportOptions) {
     this.grpcCallOptions = options.grpcCallOptions;
-    this.grpcClient = options.grpcClient ?? new A2AServiceClient(
-      options.endpoint,
-      options.grpcChannelCredentials ?? credentials.createInsecure()
-    );
+    this.grpcClient =
+      options.grpcClient ??
+      new A2AServiceClient(
+        options.endpoint,
+        options.grpcChannelCredentials ?? credentials.createInsecure()
+      );
   }
 
   async getExtendedAgentCard(options?: RequestOptions): Promise<AgentCard> {
@@ -117,8 +119,8 @@ export class GrpcTransport implements Transport {
       params,
       options,
       this.grpcClient.createTaskPushNotificationConfig.bind(this.grpcClient),
-      ToProto.taskPushNotificationConfig,
-      FromProto.setTaskPushNotificationConfigParams
+      ToProto.taskPushNotificationConfigCreate,
+      FromProto.getTaskPushNoticationConfig
     );
     return rpcResponse;
   }
