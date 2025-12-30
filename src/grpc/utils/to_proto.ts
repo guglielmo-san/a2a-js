@@ -34,6 +34,7 @@ import {
   DeleteTaskPushNotificationConfigRequest,
   GetTaskRequest,
   CancelTaskRequest,
+  TaskSubscriptionRequest,
 } from '../a2a.js';
 import { generatePushNotificationConfigName, generateTaskName } from './id_decoding.js';
 
@@ -531,6 +532,12 @@ export class ToProto {
   }
 
   static cancelTaskRequest(params: types.TaskIdParams): CancelTaskRequest {
+    return {
+      name: generateTaskName(params.id),
+    };
+  }
+
+  static taskIdParams(params: types.TaskIdParams): TaskSubscriptionRequest {
     return {
       name: generateTaskName(params.id),
     };

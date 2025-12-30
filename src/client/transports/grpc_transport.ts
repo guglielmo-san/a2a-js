@@ -35,18 +35,18 @@ import {
   UnsupportedOperationError,
 } from '../../errors.js';
 
-type GrpcUnaryCall<TParams, TResponse> = (
-  request: TParams,
+type GrpcUnaryCall<TReq, TRes> = (
+  request: TReq,
   metadata: Metadata,
   options: Partial<CallOptions>,
-  callback: (error: ServiceError | null, response: TResponse) => void
+  callback: (error: ServiceError | null, response: TRes) => void
 ) => ClientUnaryCall;
 
-type GrpcStreamCall<TParams> = (
-  request: TParams,
+type GrpcStreamCall<TReq, TRes> = (
+  request: TReq,
   metadata?: Metadata,
   options?: Partial<CallOptions>
-) => ClientReadableStream<StreamResponse>;
+) => ClientReadableStream<TRes>;
 
 export interface GrpcTransportOptions {
   endpoint: string;
@@ -93,7 +93,7 @@ export class GrpcTransport implements Transport {
     params: MessageSendParams,
     options?: RequestOptions
   ): AsyncGenerator<A2AStreamEventData, void, undefined> {
-    yield* this._sendGrpcStreamingRequest('sendStreamingMessage', params, options);
+    yield* this._sendGrpcStreamingRequest('sendStreamingMessage', params, options, ToProto.messageSendParams);
   }
 
   async setTaskPushNotificationConfig(
@@ -177,7 +177,7 @@ export class GrpcTransport implements Transport {
     params: TaskIdParams,
     options?: RequestOptions
   ): AsyncGenerator<A2AStreamEventData, void, undefined> {
-    yield* this._sendGrpcStreamingRequest('taskSubscription', params, options);
+    yield* this._sendGrpcStreamingRequest('taskSubscription', params, options, ToProto.taskIdParams);
   }
 
   private async _sendGrpcRequest<TReq, TRes, TParams, TResponse>(
@@ -195,10 +195,15 @@ export class GrpcTransport implements Transport {
         this.gprcCallOptions ?? {},
         (error, response) => {
           if (error) {
-            if (this.isGrpcError(error) && this.isGrpcA2AError(error)) {
+            if (this.isA2AServiceError(error)) {
               return reject(GrpcTransport.mapToError(error));
             }
-            return reject(new Error(`GRPC error for ${String(method)}! Cause: ${error}`));
+            const statusInfo = 'code' in error ? `(Status: ${error.code})` : '';
+            return reject(
+              new Error(`GRPC error for ${String(method)}! ${statusInfo} ${error.message}`, {
+                cause: error,
+              })
+            );
           }
           resolve(converter(response));
         }
@@ -206,14 +211,15 @@ export class GrpcTransport implements Transport {
     });
   }
 
-  private async *_sendGrpcStreamingRequest<TParams>(
+  private async *_sendGrpcStreamingRequest<TReq, TRes, TParams>(
     method: 'sendStreamingMessage' | 'taskSubscription',
     params: TParams,
-    options: RequestOptions | undefined
+    options: RequestOptions | undefined,
+    parser: (req: TParams) => TReq
   ): AsyncGenerator<A2AStreamEventData, void, undefined> {
-    const clientMethod = this.grpcClient[method] as GrpcStreamCall<TParams>;
+    const clientMethod = this.grpcClient[method] as GrpcStreamCall<TReq, TRes>;
     const streamResponse = clientMethod(
-      params,
+      parser(params),
       this._buildMetadata(options),
       this.gprcCallOptions ?? {}
     );
@@ -236,18 +242,28 @@ export class GrpcTransport implements Transport {
         }
       }
     } catch (error) {
-      if (this.isGrpcError(error) && this.isGrpcA2AError(error)) {
-        throw GrpcTransport.mapToError(error);
+      if (this.isServiceError(error)) {
+        if (this.isA2AServiceError(error)) {
+          throw GrpcTransport.mapToError(error);
+        }
+        throw new Error(`GRPC error for ${String(method)}! ${error.code} ${error.message}`, {
+          cause: error,
+        });
       } else {
-        throw new Error(`GRPC error for ${method}! Cause: ${error}`);
+        throw error;
       }
+    } finally {
+      streamResponse.cancel();
     }
   }
 
-  private isGrpcA2AError(error: ServiceError): boolean {
-    return error.metadata.get('a2a-error').length > 0;
+  private isA2AServiceError(error: ServiceError): boolean {
+    return (
+      typeof error === 'object' && error !== null && error.metadata.get('a2a-error').length === 1
+    );
   }
-  private isGrpcError(error: unknown): error is ServiceError {
+
+  private isServiceError(error: unknown): error is ServiceError {
     return typeof error === 'object' && error !== null && 'code' in error;
   }
 
@@ -262,8 +278,8 @@ export class GrpcTransport implements Transport {
   }
 
   private static mapToError(error: ServiceError): Error {
-    const a2aErrorCode = Number(error.metadata.get('a2a-error')[0]);
-    switch (a2aErrorCode) {
+    const a2aErrorCode = error.metadata.get('a2a-error');
+    switch (Number(a2aErrorCode[0])) {
       case A2A_ERROR_CODE.TASK_NOT_FOUND:
         return new TaskNotFoundError(error.message);
       case A2A_ERROR_CODE.TASK_NOT_CANCELABLE:
