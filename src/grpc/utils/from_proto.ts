@@ -234,7 +234,7 @@ export class FromProto {
     return {
       message: FromProto.message(status.update),
       state: FromProto.taskState(status.state),
-      timestamp: status.timestamp?.toDateString(),
+      timestamp: status.timestamp?.toISOString(),
     };
   }
 
