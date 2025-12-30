@@ -5,7 +5,6 @@ import {
   Metadata,
   ClientUnaryCall,
   ClientReadableStream,
-  status,
 } from '@grpc/grpc-js';
 import { TransportProtocolName } from '../../core.js';
 import { A2AServiceClient, StreamResponse } from '../../grpc/a2a.js';
@@ -35,6 +34,7 @@ import {
   TaskNotCancelableError,
   UnsupportedOperationError,
 } from '../../errors.js';
+
 type GrpcUnaryCall<TParams, TResponse> = (
   request: TParams,
   metadata: Metadata,
@@ -61,10 +61,7 @@ export class GrpcTransport implements Transport {
   constructor(options: GrpcTransportOptions) {
     this.endpoint = options.endpoint;
     this.gprcCallOptions = options.gprcCallOptions;
-    this.grpcClient = new A2AServiceClient(
-      this.endpoint,
-      credentials.createInsecure()
-    );
+    this.grpcClient = new A2AServiceClient(this.endpoint, credentials.createInsecure());
   }
 
   async getExtendedAgentCard(options?: RequestOptions): Promise<AgentCard> {
@@ -101,7 +98,7 @@ export class GrpcTransport implements Transport {
 
   async setTaskPushNotificationConfig(
     params: TaskPushNotificationConfig,
-    options?: RequestOptions,
+    options?: RequestOptions
   ): Promise<TaskPushNotificationConfig> {
     const rpcResponse = await this._sendGrpcRequest(
       'createTaskPushNotificationConfig',
@@ -115,31 +112,46 @@ export class GrpcTransport implements Transport {
 
   async getTaskPushNotificationConfig(
     params: GetTaskPushNotificationConfigParams,
-    options?: RequestOptions,
+    options?: RequestOptions
   ): Promise<TaskPushNotificationConfig> {
-    const rpcResponse = await this._sendGrpcRequest('getTaskPushNotificationConfig', params, options, ToProto.getTaskPushNotificationConfigRequest, FromProto.getTaskPushNoticationConfig);
+    const rpcResponse = await this._sendGrpcRequest(
+      'getTaskPushNotificationConfig',
+      params,
+      options,
+      ToProto.getTaskPushNotificationConfigRequest,
+      FromProto.getTaskPushNoticationConfig
+    );
     return rpcResponse;
   }
 
   async listTaskPushNotificationConfig(
     params: ListTaskPushNotificationConfigParams,
-    options?: RequestOptions,
+    options?: RequestOptions
   ): Promise<TaskPushNotificationConfig[]> {
-    const rpcResponse = await this._sendGrpcRequest('listTaskPushNotificationConfig', params, options, ToProto.listTaskPushNotificationConfigRequest, FromProto.listTaskPushNotificationConfig);
+    const rpcResponse = await this._sendGrpcRequest(
+      'listTaskPushNotificationConfig',
+      params,
+      options,
+      ToProto.listTaskPushNotificationConfigRequest,
+      FromProto.listTaskPushNotificationConfig
+    );
     return rpcResponse;
   }
 
   async deleteTaskPushNotificationConfig(
     params: DeleteTaskPushNotificationConfigParams,
-    options?: RequestOptions,
+    options?: RequestOptions
   ): Promise<void> {
-    await this._sendGrpcRequest('deleteTaskPushNotificationConfig', params, options, ToProto.deleteTaskPushNotificationConfigRequest, () => {});
+    await this._sendGrpcRequest(
+      'deleteTaskPushNotificationConfig',
+      params,
+      options,
+      ToProto.deleteTaskPushNotificationConfigRequest,
+      () => {}
+    );
   }
 
-  async getTask(
-    params: TaskQueryParams,
-    options?: RequestOptions,
-  ): Promise<Task> {
+  async getTask(params: TaskQueryParams, options?: RequestOptions): Promise<Task> {
     const rpcResponse = await this._sendGrpcRequest(
       'getTask',
       params,
@@ -150,10 +162,7 @@ export class GrpcTransport implements Transport {
     return rpcResponse;
   }
 
-  async cancelTask(
-    params: TaskIdParams,
-    options?: RequestOptions,
-  ): Promise<Task> {
+  async cancelTask(params: TaskIdParams, options?: RequestOptions): Promise<Task> {
     const rpcResponse = await this._sendGrpcRequest(
       'cancelTask',
       params,
@@ -186,7 +195,10 @@ export class GrpcTransport implements Transport {
         this.gprcCallOptions ?? {},
         (error, response) => {
           if (error) {
-            return reject(GrpcTransport.mapToError(error));
+            if (this.isGrpcError(error) && this.isGrpcA2AError(error)) {
+              return reject(GrpcTransport.mapToError(error));
+            }
+            return reject(new Error(`GRPC error for ${String(method)}! Cause: ${error}`));
           }
           resolve(converter(response));
         }
@@ -194,41 +206,50 @@ export class GrpcTransport implements Transport {
     });
   }
 
-  private async * _sendGrpcStreamingRequest<TParams>(
-  method: 'sendStreamingMessage' | 'taskSubscription',
-  params: TParams,
-  options: RequestOptions | undefined
-): AsyncGenerator<A2AStreamEventData, void, undefined> {
-  const clientMethod = this.grpcClient[method] as GrpcStreamCall<TParams>;
-  const streamResponse = clientMethod(
-    params,
-    this._buildMetadata(options),
-    this.gprcCallOptions ?? {},
-  );
-  try {
-    for await (const response of streamResponse) {
-      const payload = response.payload;
-      switch (payload.$case) {
-        case 'msg':
-          yield FromProto.message(payload.value);
-          break;
-        case 'task':
-          yield FromProto.task(payload.value);
-          break;
-        case 'statusUpdate':
-          yield FromProto.taskStatusUpdate(payload.value);
-          break;
-        case 'artifactUpdate':
-          yield FromProto.taskArtifactUpdate(payload.value);
-          break;
+  private async *_sendGrpcStreamingRequest<TParams>(
+    method: 'sendStreamingMessage' | 'taskSubscription',
+    params: TParams,
+    options: RequestOptions | undefined
+  ): AsyncGenerator<A2AStreamEventData, void, undefined> {
+    const clientMethod = this.grpcClient[method] as GrpcStreamCall<TParams>;
+    const streamResponse = clientMethod(
+      params,
+      this._buildMetadata(options),
+      this.gprcCallOptions ?? {}
+    );
+    try {
+      for await (const response of streamResponse) {
+        const payload = response.payload;
+        switch (payload.$case) {
+          case 'msg':
+            yield FromProto.message(payload.value);
+            break;
+          case 'task':
+            yield FromProto.task(payload.value);
+            break;
+          case 'statusUpdate':
+            yield FromProto.taskStatusUpdate(payload.value);
+            break;
+          case 'artifactUpdate':
+            yield FromProto.taskArtifactUpdate(payload.value);
+            break;
+        }
+      }
+    } catch (error) {
+      if (this.isGrpcError(error) && this.isGrpcA2AError(error)) {
+        throw GrpcTransport.mapToError(error);
+      } else {
+        throw new Error(`GRPC error for ${method}! Cause: ${error}`);
       }
     }
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      throw error;
-    }
   }
-}
+
+  private isGrpcA2AError(error: ServiceError): boolean {
+    return error.metadata.get('a2a-error').length > 0;
+  }
+  private isGrpcError(error: unknown): error is ServiceError {
+    return typeof error === 'object' && error !== null && 'code' in error;
+  }
 
   private _buildMetadata(options?: RequestOptions): Metadata {
     const metadata = new Metadata();
@@ -241,19 +262,26 @@ export class GrpcTransport implements Transport {
   }
 
   private static mapToError(error: ServiceError): Error {
-    switch (error.code) {
-      case status.NOT_FOUND:
-        return new TaskNotFoundError(error.details);
-      case status.FAILED_PRECONDITION:
-        return new TaskNotCancelableError(error.details);
-      case status.UNIMPLEMENTED:
-        return new UnsupportedOperationError(error.details);
-      case status.INVALID_ARGUMENT:
-        return new ContentTypeNotSupportedError(error.details);
-      case status.INTERNAL:
-        return new InvalidAgentResponseError(error.details);
+    const a2aErrorCode = Number(error.metadata.get('a2a-error')[0]);
+    switch (a2aErrorCode) {
+      case A2A_ERROR_CODE.TASK_NOT_FOUND:
+        return new TaskNotFoundError(error.message);
+      case A2A_ERROR_CODE.TASK_NOT_CANCELABLE:
+        return new TaskNotCancelableError(error.message);
+      case A2A_ERROR_CODE.PUSH_NOTIFICATION_NOT_SUPPORTED:
+        return new PushNotificationNotSupportedError(error.message);
+      case A2A_ERROR_CODE.UNSUPPORTED_OPERATION:
+        return new UnsupportedOperationError(error.message);
+      case A2A_ERROR_CODE.CONTENT_TYPE_NOT_SUPPORTED:
+        return new ContentTypeNotSupportedError(error.message);
+      case A2A_ERROR_CODE.INVALID_AGENT_RESPONSE:
+        return new InvalidAgentResponseError(error.message);
+      case A2A_ERROR_CODE.AUTHENTICATED_EXTENDED_CARD_NOT_CONFIGURED:
+        return new AuthenticatedExtendedCardNotConfiguredError(error.message);
       default:
-        return error;
+        return new Error(
+          `GRPC error: ${error.message} Code: ${error.code} Details: ${error.details}`
+        );
     }
   }
 }

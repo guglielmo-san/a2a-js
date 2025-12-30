@@ -274,7 +274,7 @@ export class ToProto {
   ): DeleteTaskPushNotificationConfigRequest {
     return {
       name: generatePushNotificationConfigName(config.id, config.pushNotificationConfigId),
-    }
+    };
   }
 
   static taskPushNotificationConfig(

@@ -22,7 +22,6 @@ import {
   ListTaskPushNotificationConfigResponse,
   AgentCard,
   Security,
-  StringList,
   SecurityScheme,
   AgentSkill,
   AgentCardSignature,
@@ -274,14 +273,18 @@ export class FromProto {
     };
   }
 
-  static getTaskPushNoticationConfig(request: TaskPushNotificationConfig): types.TaskPushNotificationConfig {
+  static getTaskPushNoticationConfig(
+    request: TaskPushNotificationConfig
+  ): types.TaskPushNotificationConfig {
     return {
       taskId: extractTaskId(request.name),
       pushNotificationConfig: FromProto.pushNotificationConfig(request.pushNotificationConfig),
     };
   }
 
-  static listTaskPushNotificationConfig(request: ListTaskPushNotificationConfigResponse): types.TaskPushNotificationConfig[] {
+  static listTaskPushNotificationConfig(
+    request: ListTaskPushNotificationConfigResponse
+  ): types.TaskPushNotificationConfig[] {
     return request.configs.map((c) => FromProto.getTaskPushNoticationConfig(c));
   }
 
@@ -297,34 +300,26 @@ export class FromProto {
       preferredTransport: agentCard.preferredTransport,
       provider: agentCard.provider,
       protocolVersion: agentCard.protocolVersion,
-      security: agentCard.security?.map(s => FromProto.security(s)),
+      security: agentCard.security?.map((s) => FromProto.security(s)),
       securitySchemes: FromProto.securitySchemes(agentCard.securitySchemes),
-      skills: agentCard.skills.map(s => FromProto.skills(s)),
-      signatures: agentCard.signatures?.map(s => FromProto.signatures(s)),
+      skills: agentCard.skills.map((s) => FromProto.skills(s)),
+      signatures: agentCard.signatures?.map((s) => FromProto.signatures(s)),
       supportsAuthenticatedExtendedCard: agentCard.supportsAuthenticatedExtendedCard,
       url: agentCard.url,
       version: agentCard.version,
-    }
+    };
   }
 
   static security(security: Security): { [k: string]: string[] } {
-  return Object.fromEntries(
-    Object.entries(security.schemes).map(([key, value]) => [
-      key, 
-      value as unknown as string[]
-    ])
-  );
-}
+    return Object.fromEntries(
+      Object.entries(security.schemes).map(([key, value]) => [key, value as unknown as string[]])
+    );
+  }
 
-static securitySchemes(securitySchemes: SecurityScheme): {
+  static securitySchemes(securitySchemes: SecurityScheme): {
     [k: string]: types.SecurityScheme;
   } {
-    return Object.fromEntries(
-      Object.entries(securitySchemes).map(([key, value]) => [
-        key,
-        value,
-      ])
-    );
+    return Object.fromEntries(Object.entries(securitySchemes).map(([key, value]) => [key, value]));
   }
 
   static skills(skill: AgentSkill): types.AgentSkill {
@@ -336,8 +331,8 @@ static securitySchemes(securitySchemes: SecurityScheme): {
       examples: skill.examples,
       inputModes: skill.inputModes,
       outputModes: skill.outputModes,
-      security: skill.security?.map(s => FromProto.security(s)),
-    }
+      security: skill.security?.map((s) => FromProto.security(s)),
+    };
   }
 
   static signatures(signatures: AgentCardSignature): types.AgentCardSignature {
@@ -345,28 +340,28 @@ static securitySchemes(securitySchemes: SecurityScheme): {
       protected: signatures.protected,
       signature: signatures.signature,
       header: signatures.header,
-    } 
-}
-
-static taskStatusUpdate(event: TaskStatusUpdateEvent): types.TaskStatusUpdateEvent {    
-  return {
-    kind: 'status-update',
-    taskId: event.taskId,
-    status: FromProto.taskStatus(event.status),
-    contextId: event.contextId,
-    metadata: event.metadata,
-    final: event.final,
+    };
   }
-}
 
-static taskArtifactUpdate(event: TaskArtifactUpdateEvent): types.TaskArtifactUpdateEvent {
-  return {
-    kind: 'artifact-update',
-    taskId: event.taskId,
-    artifact: FromProto.artifact(event.artifact),
-    contextId: event.contextId,
-    metadata: event.metadata,
-    lastChunk: event.lastChunk,
+  static taskStatusUpdate(event: TaskStatusUpdateEvent): types.TaskStatusUpdateEvent {
+    return {
+      kind: 'status-update',
+      taskId: event.taskId,
+      status: FromProto.taskStatus(event.status),
+      contextId: event.contextId,
+      metadata: event.metadata,
+      final: event.final,
+    };
   }
-}
+
+  static taskArtifactUpdate(event: TaskArtifactUpdateEvent): types.TaskArtifactUpdateEvent {
+    return {
+      kind: 'artifact-update',
+      taskId: event.taskId,
+      artifact: FromProto.artifact(event.artifact),
+      contextId: event.contextId,
+      metadata: event.metadata,
+      lastChunk: event.lastChunk,
+    };
+  }
 }
