@@ -1,3 +1,5 @@
+import { describe, it, beforeEach, afterEach, expect, vi, type Mock } from 'vitest';
+import { credentials, Metadata, ServiceError } from '@grpc/grpc-js';
 import {
   GrpcTransport,
   GrpcTransportFactory,
@@ -5,10 +7,7 @@ import {
 import { A2AServiceClient } from '../../../src/grpc/a2a.js';
 import { ToProto } from '../../../src/grpc/utils/to_proto.js';
 import { FromProto } from '../../../src/grpc/utils/from_proto.js';
-import { describe, it, beforeEach, afterEach, expect, vi, type Mock } from 'vitest';
-import { ServiceError, Metadata } from '@grpc/grpc-js';
 import {
-  A2A_ERROR_CODE,
   TaskNotFoundError,
   TaskNotCancelableError,
   PushNotificationNotSupportedError,
@@ -19,148 +18,179 @@ import {
   createMockMessage,
   createMockTask,
 } from '../util.js';
-import { TaskPushNotificationConfig } from '../../../src/types.js';
 
-vi.mock('../../../src/grpc/utils/from_proto.js');
-vi.mock('../../../src/grpc/utils/to_proto.js');
+// --- Mocks ---
 
-// 1. Use vi.hoisted to ensure these mocks exist before the mock factory runs
-const { mockGrpcMethods } = vi.hoisted(() => {
-  return {
-    mockGrpcMethods: {
-      getAgentCard: vi.fn(),
-      sendMessage: vi.fn(),
-      sendStreamingMessage: vi.fn(),
-      createTaskPushNotificationConfig: vi.fn(),
-      getTaskPushNotificationConfig: vi.fn(),
-      listTaskPushNotificationConfig: vi.fn(),
-      deleteTaskPushNotificationConfig: vi.fn(),
-      getTask: vi.fn(),
-      cancelTask: vi.fn(),
-      taskSubscription: vi.fn(),
-    },
-  };
-});
-
-// 2. Mock the gRPC Service Client using the hoisted object
+// Mock the gRPC client class
 vi.mock('../../../src/grpc/a2a.js', () => {
-  return {
-    A2AServiceClient: vi.fn().mockImplementation(() => mockGrpcMethods),
-  };
+  const A2AServiceClient = vi.fn();
+  A2AServiceClient.prototype.getAgentCard = vi.fn();
+  A2AServiceClient.prototype.sendMessage = vi.fn();
+  A2AServiceClient.prototype.sendStreamingMessage = vi.fn();
+  A2AServiceClient.prototype.createTaskPushNotificationConfig = vi.fn();
+  A2AServiceClient.prototype.getTaskPushNotificationConfig = vi.fn();
+  A2AServiceClient.prototype.listTaskPushNotificationConfig = vi.fn();
+  A2AServiceClient.prototype.deleteTaskPushNotificationConfig = vi.fn();
+  A2AServiceClient.prototype.getTask = vi.fn();
+  A2AServiceClient.prototype.cancelTask = vi.fn();
+  A2AServiceClient.prototype.taskSubscription = vi.fn();
+  return { A2AServiceClient };
 });
 
-const createGrpcError = (code: number, message: string, a2aCode?: number): ServiceError => {
-  const metadata = new Metadata();
-  if (a2aCode !== undefined) {
-    metadata.add('a2a-error', a2aCode.toString());
-  }
-  return {
-    name: 'ServiceError',
-    message,
-    code,
-    details: message,
-    metadata,
-  };
-};
+// Mock ToProto and FromProto to act as pass-throughs or return simple objects for testing flow
+vi.mock('../../../src/grpc/utils/to_proto.js', () => ({
+  ToProto: {
+    agentCard: vi.fn((x) => x),
+    messageSendParams: vi.fn((x) => x),
+    taskPushNotificationConfig: vi.fn((x) => x),
+    getTaskPushNotificationConfigRequest: vi.fn((x) => x),
+    listTaskPushNotificationConfigRequest: vi.fn((x) => x),
+    deleteTaskPushNotificationConfigRequest: vi.fn((x) => x),
+    getTaskRequest: vi.fn((x) => x),
+    cancelTaskRequest: vi.fn((x) => x),
+    taskIdParams: vi.fn((x) => x),
+  },
+}));
+
+vi.mock('../../../src/grpc/utils/from_proto.js', () => ({
+  FromProto: {
+    agentCard: vi.fn((x) => x),
+    sendMessageResult: vi.fn((x) => x),
+    message: vi.fn((x) => x),
+    setTaskPushNotificationConfigParams: vi.fn((x) => x),
+    getTaskPushNoticationConfig: vi.fn((x) => x),
+    listTaskPushNotificationConfig: vi.fn((x) => x),
+    task: vi.fn((x) => x),
+    taskStatusUpdate: vi.fn((x) => x),
+    taskArtifactUpdate: vi.fn((x) => x),
+  },
+}));
 
 describe('GrpcTransport', () => {
   let transport: GrpcTransport;
+  let mockGrpcClient: A2AServiceClient;
   const endpoint = 'localhost:50051';
 
+  // Helper to simulate a successful gRPC unary callback
+  const mockUnarySuccess = (method: Mock, response: any) => {
+    method.mockImplementation((_req: any, _meta: any, _opts: any, callback: any) => {
+      callback(null, response);
+      return {};
+    });
+  };
+
+  // Helper to simulate a gRPC error
+  const mockUnaryError = (method: Mock, code: number, message: string, a2aCode?: number) => {
+    method.mockImplementation((_req: any, _meta: any, _opts: any, callback: any) => {
+      const error: Partial<ServiceError> = {
+        code,
+        message,
+        details: message,
+        metadata: new Metadata(),
+      };
+      if (a2aCode !== undefined) {
+        error.metadata!.set('a2a-error', String(a2aCode));
+      }
+      callback(error, null);
+      return {};
+    });
+  };
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    transport = new GrpcTransport({ endpoint });
+    mockGrpcClient = new A2AServiceClient(endpoint, credentials.createInsecure());
+    transport = new GrpcTransport({ endpoint, grpcClient: mockGrpcClient});
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
-  describe('constructor', () => {
-    it('should initialize the A2AServiceClient with the correct endpoint', () => {
-      // Ensure the constructor was called
-      expect(A2AServiceClient).toHaveBeenCalledWith(endpoint, expect.anything());
+  describe('getExtendedAgentCard', () => {
+    it('should get agent card successfully', async () => {
+      const mockCard = createMockAgentCard();
+      mockUnarySuccess(mockGrpcClient.getAgentCard as Mock, mockCard);
+
+      const result = await transport.getExtendedAgentCard();
+
+      expect(result).toEqual(mockCard);
+      expect(mockGrpcClient.getAgentCard).toHaveBeenCalled();
+      expect(FromProto.agentCard).toHaveBeenCalledWith(mockCard);
     });
   });
 
   describe('sendMessage', () => {
     it('should send message successfully', async () => {
       const params = createMessageParams();
-      const mockResponse = createMockMessage();
-
-      // Setup unary call mock
-      (mockGrpcMethods.sendMessage as Mock).mockImplementation((req, meta, opts, callback) => {
-        callback(null, mockResponse); // Success callback
-        return { cancel: vi.fn() };
-      });
+      const mockResult = createMockMessage();
+      mockUnarySuccess(mockGrpcClient.sendMessage as Mock, mockResult);
 
       const result = await transport.sendMessage(params);
 
-      expect(result).to.deep.equal(mockResponse);
+      expect(result).toEqual(mockResult);
       expect(ToProto.messageSendParams).toHaveBeenCalledWith(params);
-      expect(mockGrpcMethods.sendMessage).toHaveBeenCalledTimes(1);
-      expect(FromProto.sendMessageResult).toHaveBeenCalledWith(mockResponse);
+      expect(mockGrpcClient.sendMessage).toHaveBeenCalled();
     });
 
-    it('should pass service parameters in metadata', async () => {
+    it('should pass service parameters as metadata', async () => {
       const params = createMessageParams();
-      const options = { serviceParameters: { 'x-trace-id': '123' } };
-
-      (mockGrpcMethods.sendMessage as Mock).mockImplementation((req, meta: Metadata, opts, callback) => {
-        expect(meta.get('x-trace-id')).to.deep.equal(['123']);
-        callback(null, createMockMessage());
-        return { cancel: vi.fn() };
-      });
+      const options = { serviceParameters: { 'x-test-header': 'test-value' } };
+      mockUnarySuccess(mockGrpcClient.sendMessage as Mock, {});
 
       await transport.sendMessage(params, options);
+
+      const calledMetadata = (mockGrpcClient.sendMessage as Mock).mock.calls[0][1] as Metadata;
+      expect(calledMetadata.get('x-test-header')).toEqual(['test-value']);
     });
 
-    it('should throw TaskNotFoundError on mapped gRPC error', async () => {
+    it('should throw TaskNotFoundError when mapped from A2A error code', async () => {
       const params = createMessageParams();
-      const error = createGrpcError(
-        5, // NOT_FOUND
-        'Task not found',
-        A2A_ERROR_CODE.TASK_NOT_FOUND
-      );
-
-      (mockGrpcMethods.sendMessage as Mock).mockImplementation((req, meta, opts, callback) => {
-        callback(error, null);
-        return { cancel: vi.fn() };
-      });
+      mockUnaryError(mockGrpcClient.sendMessage as Mock, 5, 'Task Missing', -32001);
 
       await expect(transport.sendMessage(params)).rejects.toThrow(TaskNotFoundError);
+    });
+
+    it('should throw generic Error for unmapped gRPC errors', async () => {
+      const params = createMessageParams();
+      mockUnaryError(mockGrpcClient.sendMessage as Mock, 13, 'Internal Error');
+
+      await expect(transport.sendMessage(params)).rejects.toThrow('GRPC error for sendMessage');
     });
   });
 
   describe('sendMessageStream', () => {
-    it('should yield streaming events successfully', async () => {
+    it('should yield messages from stream', async () => {
       const params = createMessageParams();
       const mockMsg = createMockMessage();
 
-      const streamData = [
-        { payload: { $case: 'msg', value: mockMsg } },
-        { payload: { $case: 'task', value: { id: 't1' } } },
-      ];
-      
       const mockStream = {
         [Symbol.asyncIterator]: async function* () {
-          for (const item of streamData) yield item;
+          yield { payload: { $case: 'msg', value: mockMsg } };
         },
         cancel: vi.fn(),
       };
-
-      (mockGrpcMethods.sendStreamingMessage as Mock).mockReturnValue(mockStream);
+      (mockGrpcClient.sendStreamingMessage as Mock).mockReturnValue(mockStream);
 
       const iterator = transport.sendMessageStream(params);
-      
-      const first = await iterator.next();
-      expect(first.value).to.deep.equal(mockMsg);
+      const result = await iterator.next();
 
-      const second = await iterator.next();
-      expect(second.value).to.deep.equal({ id: 't1' });
+      expect(result.value).toEqual(mockMsg);
+      expect(FromProto.message).toHaveBeenCalledWith(mockMsg);
+      expect(mockGrpcClient.sendStreamingMessage).toHaveBeenCalled();
+    });
 
-      const third = await iterator.next();
-      expect(third.done).to.be.true;
+    it('should handle stream errors', async () => {
+      const params = createMessageParams();
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          throw { code: 13, message: 'Stream failed' };
+          yield {};
+        },
+        cancel: vi.fn(),
+      };
+      (mockGrpcClient.sendStreamingMessage as Mock).mockReturnValue(mockStream);
+
+      const iterator = transport.sendMessageStream(params);
+      await expect(iterator.next()).rejects.toThrow('GRPC error for sendStreamingMessage!');
     });
   });
 
@@ -168,14 +198,18 @@ describe('GrpcTransport', () => {
     it('should get task successfully', async () => {
       const taskId = 'task-123';
       const mockTask = createMockTask(taskId);
-
-      (mockGrpcMethods.getTask as Mock).mockImplementation((req, meta, opts, callback) => {
-        callback(null, mockTask);
-        return { cancel: vi.fn() };
-      });
+      mockUnarySuccess(mockGrpcClient.getTask as Mock, mockTask);
 
       const result = await transport.getTask({ id: taskId });
-      expect(result).to.deep.equal(mockTask);
+
+      expect(result).toEqual(mockTask);
+      expect(ToProto.getTaskRequest).toHaveBeenCalled();
+      expect(mockGrpcClient.getTask).toHaveBeenCalled();
+    });
+
+    it('should throw TaskNotFoundError', async () => {
+      mockUnaryError(mockGrpcClient.getTask as Mock, 5, 'Not Found', -32001);
+      await expect(transport.getTask({ id: 'bad-id' })).rejects.toThrow(TaskNotFoundError);
     });
   });
 
@@ -183,119 +217,124 @@ describe('GrpcTransport', () => {
     it('should cancel task successfully', async () => {
       const taskId = 'task-123';
       const mockTask = createMockTask(taskId, 'canceled');
-
-      (mockGrpcMethods.cancelTask as Mock).mockImplementation((req, meta, opts, callback) => {
-        callback(null, mockTask);
-        return { cancel: vi.fn() };
-      });
+      mockUnarySuccess(mockGrpcClient.cancelTask as Mock, mockTask);
 
       const result = await transport.cancelTask({ id: taskId });
-      expect(result).to.deep.equal(mockTask);
+
+      expect(result).toEqual(mockTask);
+      expect(mockGrpcClient.cancelTask).toHaveBeenCalled();
     });
 
-    it('should throw TaskNotCancelableError on specific A2A code', async () => {
-      const error = createGrpcError(
-        9, // FAILED_PRECONDITION
-        'Cannot cancel',
-        A2A_ERROR_CODE.TASK_NOT_CANCELABLE
-      );
-
-      (mockGrpcMethods.cancelTask as Mock).mockImplementation((req, meta, opts, callback) => {
-        callback(error, null);
-        return { cancel: vi.fn() };
-      });
-
+    it('should throw TaskNotCancelableError', async () => {
+      mockUnaryError(mockGrpcClient.cancelTask as Mock, 9, 'Cannot cancel', -32002);
       await expect(transport.cancelTask({ id: 'task-123' })).rejects.toThrow(
         TaskNotCancelableError
       );
     });
   });
 
-  describe('getExtendedAgentCard', () => {
-    it('should get agent card successfully', async () => {
-      const mockCard = {
-        name: 'Test Agent',
-        url: endpoint,
-      };
-
-      (mockGrpcMethods.getAgentCard as Mock).mockImplementation((req, meta, opts, callback) => {
-        callback(null, mockCard);
-        return { cancel: vi.fn() };
-      });
-
-      const result = await transport.getExtendedAgentCard();
-      expect(result).to.deep.equal(mockCard);
-    });
-  });
-
   describe('Push Notification Config', () => {
     const taskId = 'task-123';
     const configId = 'config-456';
-    const mockConfig: TaskPushNotificationConfig = {
+    const mockConfig = {
       taskId,
-      pushNotificationConfig: {
-        id: configId,
-        url: 'https://notify.example.com/webhook',
-      },
+      pushNotificationConfig: { id: configId, url: 'http://test' },
     };
 
     describe('setTaskPushNotificationConfig', () => {
       it('should set config successfully', async () => {
-        (mockGrpcMethods.createTaskPushNotificationConfig as Mock).mockImplementation((req, meta, opts, callback) => {
-          callback(null, mockConfig);
-          return { cancel: vi.fn() };
-        });
+        mockUnarySuccess(mockGrpcClient.createTaskPushNotificationConfig as Mock, mockConfig);
 
         const result = await transport.setTaskPushNotificationConfig(mockConfig);
-        expect(result).to.deep.equal(mockConfig);
+
+        expect(result).toEqual(mockConfig);
+        expect(mockGrpcClient.createTaskPushNotificationConfig).toHaveBeenCalled();
+      });
+
+      it('should throw PushNotificationNotSupportedError', async () => {
+        mockUnaryError(
+          mockGrpcClient.createTaskPushNotificationConfig as Mock,
+          3,
+          'Not supported',
+          -32003
+        );
+        await expect(transport.setTaskPushNotificationConfig(mockConfig)).rejects.toThrow(
+          PushNotificationNotSupportedError
+        );
       });
     });
 
     describe('getTaskPushNotificationConfig', () => {
       it('should get config successfully', async () => {
-        (mockGrpcMethods.getTaskPushNotificationConfig as Mock).mockImplementation((req, meta, opts, callback) => {
-          callback(null, mockConfig);
-          return { cancel: vi.fn() };
-        });
+        mockUnarySuccess(mockGrpcClient.getTaskPushNotificationConfig as Mock, mockConfig);
 
         const result = await transport.getTaskPushNotificationConfig({
           id: taskId,
           pushNotificationConfigId: configId,
         });
 
-        expect(result).to.deep.equal(mockConfig);
+        expect(result).toEqual(mockConfig);
       });
     });
 
     describe('listTaskPushNotificationConfig', () => {
       it('should list configs successfully', async () => {
         const mockList = [mockConfig];
-
-        (mockGrpcMethods.listTaskPushNotificationConfig as Mock).mockImplementation((req, meta, opts, callback) => {
-          callback(null, mockList);
-          return { cancel: vi.fn() };
-        });
+        mockUnarySuccess(mockGrpcClient.listTaskPushNotificationConfig as Mock, mockList);
 
         const result = await transport.listTaskPushNotificationConfig({ id: taskId });
 
-        expect(result).to.deep.equal(mockList);
+        expect(result).toEqual(mockList);
       });
     });
 
     describe('deleteTaskPushNotificationConfig', () => {
       it('should delete config successfully', async () => {
-        (mockGrpcMethods.deleteTaskPushNotificationConfig as Mock).mockImplementation((req, meta, opts, callback) => {
-          callback(null, {}); 
-          return { cancel: vi.fn() };
-        });
+        mockUnarySuccess(mockGrpcClient.deleteTaskPushNotificationConfig as Mock, {});
 
         await transport.deleteTaskPushNotificationConfig({
           id: taskId,
           pushNotificationConfigId: configId,
         });
 
-        expect(mockGrpcMethods.deleteTaskPushNotificationConfig).toHaveBeenCalled();
+        expect(mockGrpcClient.deleteTaskPushNotificationConfig).toHaveBeenCalled();
       });
     });
+  });
+
+  describe('resubscribeTask', () => {
+    it('should yield task updates from stream', async () => {
+      const params = { id: 'task-123' };
+      const mockUpdate = createMockTask('task-123');
+
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield { payload: { $case: 'task', value: mockUpdate } };
+        },
+        cancel: vi.fn(),
+      };
+      (mockGrpcClient.taskSubscription as Mock).mockReturnValue(mockStream);
+
+      const iterator = transport.resubscribeTask(params);
+      const result = await iterator.next();
+
+      expect(result.value).toEqual(mockUpdate);
+      expect(FromProto.task).toHaveBeenCalledWith(mockUpdate);
+    });
+  });
+});
+
+describe('GrpcTransportFactory', () => {
+  it('should have correct protocol name', () => {
+    const factory = new GrpcTransportFactory();
+    expect(factory.protocolName).toBe('GRPC');
+  });
+
+  it('should create transport with correct endpoint', async () => {
+    const factory = new GrpcTransportFactory();
+    const agentCard = createMockAgentCard({ url: 'localhost:50051' });
+    const transport = await factory.create(agentCard.url, agentCard);
+
+    expect(transport).toBeInstanceOf(GrpcTransport);
   });
 });

@@ -5,10 +5,10 @@ import {
   Metadata,
   ClientUnaryCall,
   ClientReadableStream,
-  ChannelCredentials
+  ChannelCredentials,
 } from '@grpc/grpc-js';
 import { TransportProtocolName } from '../../core.js';
-import { A2AServiceClient, StreamResponse } from '../../grpc/a2a.js';
+import { A2AServiceClient } from '../../grpc/a2a.js';
 import {
   MessageSendParams,
   TaskPushNotificationConfig,
@@ -51,6 +51,7 @@ type GrpcStreamCall<TReq, TRes> = (
 
 export interface GrpcTransportOptions {
   endpoint: string;
+  grpcClient?: A2AServiceClient;
   grpcChannelCredentials?: ChannelCredentials;
   grpcCallOptions?: Partial<CallOptions>;
 }
@@ -61,7 +62,10 @@ export class GrpcTransport implements Transport {
 
   constructor(options: GrpcTransportOptions) {
     this.grpcCallOptions = options.grpcCallOptions;
-    this.grpcClient = new A2AServiceClient(options.endpoint, options.grpcChannelCredentials ?? credentials.createInsecure());
+    this.grpcClient = options.grpcClient ?? new A2AServiceClient(
+      options.endpoint,
+      options.grpcChannelCredentials ?? credentials.createInsecure()
+    );
   }
 
   async getExtendedAgentCard(options?: RequestOptions): Promise<AgentCard> {
@@ -69,6 +73,7 @@ export class GrpcTransport implements Transport {
       'getAgentCard',
       undefined,
       options,
+      this.grpcClient.getAgentCard.bind(this.grpcClient),
       () => {},
       FromProto.agentCard
     );
@@ -83,6 +88,7 @@ export class GrpcTransport implements Transport {
       'sendMessage',
       params,
       options,
+      this.grpcClient.sendMessage.bind(this.grpcClient),
       ToProto.messageSendParams,
       FromProto.sendMessageResult
     );
@@ -93,7 +99,13 @@ export class GrpcTransport implements Transport {
     params: MessageSendParams,
     options?: RequestOptions
   ): AsyncGenerator<A2AStreamEventData, void, undefined> {
-    yield* this._sendGrpcStreamingRequest('sendStreamingMessage', params, options, ToProto.messageSendParams);
+    yield* this._sendGrpcStreamingRequest(
+      'sendStreamingMessage',
+      params,
+      options,
+      this.grpcClient.sendStreamingMessage.bind(this.grpcClient),
+      ToProto.messageSendParams
+    );
   }
 
   async setTaskPushNotificationConfig(
@@ -104,6 +116,7 @@ export class GrpcTransport implements Transport {
       'createTaskPushNotificationConfig',
       params,
       options,
+      this.grpcClient.createTaskPushNotificationConfig.bind(this.grpcClient),
       ToProto.taskPushNotificationConfig,
       FromProto.setTaskPushNotificationConfigParams
     );
@@ -118,6 +131,7 @@ export class GrpcTransport implements Transport {
       'getTaskPushNotificationConfig',
       params,
       options,
+      this.grpcClient.getTaskPushNotificationConfig.bind(this.grpcClient),
       ToProto.getTaskPushNotificationConfigRequest,
       FromProto.getTaskPushNoticationConfig
     );
@@ -132,6 +146,7 @@ export class GrpcTransport implements Transport {
       'listTaskPushNotificationConfig',
       params,
       options,
+      this.grpcClient.listTaskPushNotificationConfig.bind(this.grpcClient),
       ToProto.listTaskPushNotificationConfigRequest,
       FromProto.listTaskPushNotificationConfig
     );
@@ -146,6 +161,7 @@ export class GrpcTransport implements Transport {
       'deleteTaskPushNotificationConfig',
       params,
       options,
+      this.grpcClient.deleteTaskPushNotificationConfig.bind(this.grpcClient),
       ToProto.deleteTaskPushNotificationConfigRequest,
       () => {}
     );
@@ -156,6 +172,7 @@ export class GrpcTransport implements Transport {
       'getTask',
       params,
       options,
+      this.grpcClient.getTask.bind(this.grpcClient),
       ToProto.getTaskRequest,
       FromProto.task
     );
@@ -167,6 +184,7 @@ export class GrpcTransport implements Transport {
       'cancelTask',
       params,
       options,
+      this.grpcClient.cancelTask.bind(this.grpcClient),
       ToProto.cancelTaskRequest,
       FromProto.task
     );
@@ -177,19 +195,25 @@ export class GrpcTransport implements Transport {
     params: TaskIdParams,
     options?: RequestOptions
   ): AsyncGenerator<A2AStreamEventData, void, undefined> {
-    yield* this._sendGrpcStreamingRequest('taskSubscription', params, options, ToProto.taskIdParams);
+    yield* this._sendGrpcStreamingRequest(
+      'taskSubscription',
+      params,
+      options,
+      this.grpcClient.taskSubscription.bind(this.grpcClient),
+      ToProto.taskIdParams
+    );
   }
 
   private async _sendGrpcRequest<TReq, TRes, TParams, TResponse>(
     method: keyof A2AServiceClient,
     params: TParams,
     options: RequestOptions | undefined,
+    call: GrpcUnaryCall<TReq, TRes>,
     parser: (req: TParams) => TReq,
     converter: (res: TRes) => TResponse
   ): Promise<TResponse> {
     return new Promise((resolve, reject) => {
-      const clientMethod = this.grpcClient[method] as unknown as GrpcUnaryCall<TReq, TRes>;
-      clientMethod(
+      call(
         parser(params),
         this._buildMetadata(options),
         this.grpcCallOptions ?? {},
@@ -215,10 +239,10 @@ export class GrpcTransport implements Transport {
     method: 'sendStreamingMessage' | 'taskSubscription',
     params: TParams,
     options: RequestOptions | undefined,
+    call: GrpcStreamCall<TReq, TRes>,
     parser: (req: TParams) => TReq
   ): AsyncGenerator<A2AStreamEventData, void, undefined> {
-    const clientMethod = this.grpcClient[method] as GrpcStreamCall<TReq, TRes>;
-    const streamResponse = clientMethod(
+    const streamResponse = call(
       parser(params),
       this._buildMetadata(options),
       this.grpcCallOptions ?? {}
@@ -259,7 +283,7 @@ export class GrpcTransport implements Transport {
 
   private isA2AServiceError(error: ServiceError): boolean {
     return (
-      typeof error === 'object' && error !== null && error.metadata.get('a2a-error').length === 1
+      typeof error === 'object' && error !== null && error.metadata?.get('a2a-error').length === 1
     );
   }
 
@@ -303,6 +327,7 @@ export class GrpcTransport implements Transport {
 }
 
 export class GrpcTransportFactoryOptions {
+  grpcClient?: A2AServiceClient;
   grpcChannelCredentials?: ChannelCredentials;
   grpcCallOptions?: Partial<CallOptions>;
 }
@@ -319,6 +344,7 @@ export class GrpcTransportFactory implements TransportFactory {
   async create(url: string, _agentCard: AgentCard): Promise<Transport> {
     return new GrpcTransport({
       endpoint: url,
+      grpcClient: this.options?.grpcClient,
       grpcChannelCredentials: this.options?.grpcChannelCredentials,
       grpcCallOptions: this.options?.grpcCallOptions,
     });
