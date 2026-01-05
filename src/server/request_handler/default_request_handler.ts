@@ -34,6 +34,7 @@ import {
 import { PushNotificationSender } from '../push_notification/push_notification_sender.js';
 import { DefaultPushNotificationSender } from '../push_notification/default_push_notification_sender.js';
 import { ServerCallContext } from '../context.js';
+import { AgentCardSignatureGenerator } from '../../signature.js';
 
 const terminalStates: TaskState[] = ['completed', 'failed', 'canceled', 'rejected'];
 
@@ -45,6 +46,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
   private readonly pushNotificationStore?: PushNotificationStore;
   private readonly pushNotificationSender?: PushNotificationSender;
   private readonly extendedAgentCardProvider?: AgentCard | ExtendedAgentCardProvider;
+  private readonly agentCardSignatureGenerator?: AgentCardSignatureGenerator;
 
   constructor(
     agentCard: AgentCard,
@@ -53,13 +55,15 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     eventBusManager: ExecutionEventBusManager = new DefaultExecutionEventBusManager(),
     pushNotificationStore?: PushNotificationStore,
     pushNotificationSender?: PushNotificationSender,
-    extendedAgentCardProvider?: AgentCard | ExtendedAgentCardProvider
+    extendedAgentCardProvider?: AgentCard | ExtendedAgentCardProvider,
+    agentCardSignatureGenerator?: AgentCardSignatureGenerator
   ) {
     this.agentCard = agentCard;
     this.taskStore = taskStore;
     this.agentExecutor = agentExecutor;
     this.eventBusManager = eventBusManager;
     this.extendedAgentCardProvider = extendedAgentCardProvider;
+    this.agentCardSignatureGenerator = agentCardSignatureGenerator;
 
     // If push notifications are supported, use the provided store and sender.
     // Otherwise, use the default in-memory store and sender.
@@ -71,6 +75,9 @@ export class DefaultRequestHandler implements A2ARequestHandler {
   }
 
   async getAgentCard(): Promise<AgentCard> {
+    if (this.agentCardSignatureGenerator) {
+      return await this.agentCardSignatureGenerator(this.agentCard);
+    }
     return this.agentCard;
   }
 
@@ -85,9 +92,12 @@ export class DefaultRequestHandler implements A2ARequestHandler {
       return this.extendedAgentCardProvider(context);
     }
     if (context?.user?.isAuthenticated) {
+      if (this.agentCardSignatureGenerator) {
+        return await this.agentCardSignatureGenerator(this.extendedAgentCardProvider);
+      }
       return this.extendedAgentCardProvider;
     }
-    return this.agentCard;
+    return this.getAgentCard();
   }
 
   private async _createRequestContext(
