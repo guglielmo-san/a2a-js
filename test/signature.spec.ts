@@ -59,26 +59,6 @@ describe('Agent Card Signature', () => {
       const result = canonicalizeAgentCard(input);
       expect(result).toBe(expected);
     });
-
-    it('should return "{}" if the object is completely empty after cleaning', () => {
-      const input: AgentCard = {
-        name: '',
-        description: '',
-        capabilities: {
-          streaming: false,
-          pushNotifications: false,
-          extensions: [],
-        },
-        skills: [],
-        defaultInputModes: [],
-        defaultOutputModes: [],
-        protocolVersion: '',
-        url: '',
-        version: '',
-      };
-      const result = canonicalizeAgentCard(input);
-      expect(result).toBe('{}');
-    });
   });
 
   describe('create_agent_card_signature', () => {

@@ -9,10 +9,10 @@ export function generate_agent_card_signature(
   header?: jose.JWSHeaderParameters
 ): AgentCardSignatureGenerator {
   return async (agentCard: AgentCard): Promise<AgentCard> => {
-    const card_copy = JSON.parse(JSON.stringify(agentCard));
-    delete card_copy.signatures;
-    const canonical_payload = canonicalizeAgentCard(card_copy);
-    const payloadBytes = new TextEncoder().encode(canonical_payload);
+    const cardCopy = JSON.parse(JSON.stringify(agentCard));
+    delete cardCopy.signatures;
+    const canonicalPayload = canonicalizeAgentCard(cardCopy);
+    const payloadBytes = new TextEncoder().encode(canonicalPayload);
 
     const private_key = await jose.importPKCS8(private_key_pem, protectedHeader.alg);
     const jws = await new jose.CompactSign(payloadBytes)
@@ -39,9 +39,9 @@ export function verify_agent_card_signature(
   retrieve_public_key: (kid: string, jku?: string) => Promise<string>
 ): AgentCardSignatureVerifier {
   return async (agentCard: AgentCard): Promise<void> => {
-    const card_copy = JSON.parse(JSON.stringify(agentCard));
-    delete card_copy.signatures;
-    const canonical_payload = canonicalizeAgentCard(card_copy);
+    const cardCopy = JSON.parse(JSON.stringify(agentCard));
+    delete cardCopy.signatures;
+    const canonical_payload = canonicalizeAgentCard(cardCopy);
     const payloadBytes = new TextEncoder().encode(canonical_payload);
     const encodedPayload = jose.base64url.encode(payloadBytes);
 
@@ -97,7 +97,7 @@ function cleanEmpty(d: unknown): unknown {
  * JCS Canonicalization (RFC 8785)
  * Sorts keys recursively and serializes to string.
  */
-function jcsStringify(value: any): string {
+function jcsStringify(value: unknown): string {
   if (value === null || typeof value !== 'object') {
     return JSON.stringify(value);
   }
@@ -106,9 +106,10 @@ function jcsStringify(value: any): string {
     return '[' + value.map((item) => jcsStringify(item)).join(',') + ']';
   }
 
-  const keys = Object.keys(value).sort();
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record).sort();
   const parts = keys.map((key) => {
-    return `${JSON.stringify(key)}:${jcsStringify(value[key])}`;
+    return `${JSON.stringify(key)}:${jcsStringify(record[key])}`;
   });
 
   return '{' + parts.join(',') + '}';
