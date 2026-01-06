@@ -8,15 +8,15 @@ import {
 import { AgentCard } from '../src/types.js';
 
 let mockAgentCard: AgentCard;
-let privateKeyPem: string;
-let publicKeyPem: string;
+let privateKey: jose.CryptoKey;
+let publicKey: jose.CryptoKey;
 const ALG = 'ES256';
 
 describe('Agent Card Signature', () => {
   beforeAll(async () => {
-    const { privateKey, publicKey } = await jose.generateKeyPair(ALG, { extractable: true });
-    privateKeyPem = await jose.exportPKCS8(privateKey);
-    publicKeyPem = await jose.exportSPKI(publicKey);
+    const keys = await jose.generateKeyPair(ALG, { extractable: true });
+    privateKey = keys.privateKey;
+    publicKey = keys.publicKey;
   });
 
   beforeEach(() => {
@@ -63,7 +63,7 @@ describe('Agent Card Signature', () => {
 
   describe('generateAgentCardSignature', () => {
     it('should add a signature to the agent card', async () => {
-      const signer = generateAgentCardSignature(privateKeyPem, {
+      const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
         typ: 'JOSE',
@@ -84,7 +84,7 @@ describe('Agent Card Signature', () => {
     });
 
     it('should append signatures if one already exists', async () => {
-      const signer = generateAgentCardSignature(privateKeyPem, {
+      const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'key-1',
         typ: 'JWT',
@@ -101,12 +101,12 @@ describe('Agent Card Signature', () => {
 
     beforeAll(() => {
       mockRetrieveKey.mockImplementation(async (_kid: string) => {
-        return publicKeyPem;
+        return publicKey;
       });
     });
 
     it('should successfully verify a valid signature', async () => {
-      const signer = generateAgentCardSignature(privateKeyPem, {
+      const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
         typ: 'JWT',
@@ -120,7 +120,7 @@ describe('Agent Card Signature', () => {
     });
 
     it('should fail if the payload has been tampered with', async () => {
-      const signer = generateAgentCardSignature(privateKeyPem, {
+      const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
         typ: 'JWT',
@@ -133,7 +133,7 @@ describe('Agent Card Signature', () => {
     });
 
     it('should fail if the signature is invalid/malformed', async () => {
-      const signer = generateAgentCardSignature(privateKeyPem, {
+      const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
         typ: 'JWT',
@@ -152,7 +152,7 @@ describe('Agent Card Signature', () => {
         signature: 'invalid value',
       });
 
-      const signer = generateAgentCardSignature(privateKeyPem, {
+      const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
         typ: 'JWT',

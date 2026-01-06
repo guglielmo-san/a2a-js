@@ -4,7 +4,7 @@ import * as jose from 'jose';
 export type AgentCardSignatureGenerator = (agentCard: AgentCard) => Promise<AgentCard>;
 
 export function generateAgentCardSignature(
-  privateKeyPem: string,
+  privateKey: jose.CryptoKey | jose.KeyObject | jose.JWK,
   protectedHeader: jose.JWSHeaderParameters,
   header?: jose.JWSHeaderParameters
 ): AgentCardSignatureGenerator {
@@ -13,7 +13,6 @@ export function generateAgentCardSignature(
     delete cardCopy.signatures;
     const canonicalPayload = canonicalizeAgentCard(cardCopy);
 
-    const privateKey = await jose.importPKCS8(privateKeyPem, protectedHeader.alg);
     const jws = await new jose.FlattenedSign(new TextEncoder().encode(canonicalPayload))
       .setProtectedHeader(protectedHeader)
       .setUnprotectedHeader(header)
@@ -35,7 +34,10 @@ export function generateAgentCardSignature(
 export type AgentCardSignatureVerifier = (agentCard: AgentCard) => Promise<void>;
 
 export function verifyAgentCardSignature(
-  retrievePublicKey: (kid: string, jku?: string) => Promise<string>
+  retrievePublicKey: (
+    kid: string,
+    jku?: string
+  ) => Promise<jose.CryptoKey | jose.KeyObject | jose.JWK>
 ): AgentCardSignatureVerifier {
   return async (agentCard: AgentCard): Promise<void> => {
     if (!agentCard.signatures?.length) {
@@ -53,15 +55,14 @@ export function verifyAgentCardSignature(
         if (!protectedHeader.kid || !protectedHeader.typ || !protectedHeader.alg) {
           throw new Error('Missing required header parameters (kid, typ, alg)');
         }
-        const publicKeyPem = await retrievePublicKey(protectedHeader.kid, protectedHeader.jku);
-        const key = await jose.importSPKI(publicKeyPem, protectedHeader.alg);
+        const publicKey = await retrievePublicKey(protectedHeader.kid, protectedHeader.jku);
         const jws: jose.FlattenedJWS = {
           payload: encodedPayload,
           protected: signatureEntry.protected,
           signature: signatureEntry.signature,
           header: signatureEntry.header,
         };
-        await jose.flattenedVerify(jws, key);
+        await jose.flattenedVerify(jws, publicKey);
         return;
       } catch (error) {
         console.warn('Signature verification failed:', error);

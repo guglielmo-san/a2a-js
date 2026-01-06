@@ -88,16 +88,16 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     if (!this.extendedAgentCardProvider) {
       throw A2AError.authenticatedExtendedCardNotConfigured();
     }
+    let agentCard = await this.getAgentCard();
     if (typeof this.extendedAgentCardProvider === 'function') {
-      return this.extendedAgentCardProvider(context);
+      agentCard = await this.extendedAgentCardProvider(context);
+    } else if (context?.user?.isAuthenticated) {
+      agentCard = this.extendedAgentCardProvider;
     }
-    if (context?.user?.isAuthenticated) {
-      if (this.agentCardSignatureGenerator) {
-        return await this.agentCardSignatureGenerator(this.extendedAgentCardProvider);
-      }
-      return this.extendedAgentCardProvider;
+    if(this.agentCardSignatureGenerator){
+      return await this.agentCardSignatureGenerator(agentCard);
     }
-    return this.getAgentCard();
+    return agentCard;
   }
 
   private async _createRequestContext(
