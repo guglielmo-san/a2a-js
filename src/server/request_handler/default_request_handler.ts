@@ -94,7 +94,7 @@ export class DefaultRequestHandler implements A2ARequestHandler {
     } else if (context?.user?.isAuthenticated) {
       agentCard = this.extendedAgentCardProvider;
     }
-    if(this.agentCardSignatureGenerator){
+    if (this.agentCardSignatureGenerator) {
       return await this.agentCardSignatureGenerator(agentCard);
     }
     return agentCard;
