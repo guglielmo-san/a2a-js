@@ -3,27 +3,26 @@ import * as jose from 'jose';
 
 export type AgentCardSignatureGenerator = (agentCard: AgentCard) => Promise<AgentCard>;
 
-export function generate_agent_card_signature(
-  private_key_pem: string,
-  protectedHeader: jose.CompactJWSHeaderParameters,
+export function generateAgentCardSignature(
+  privateKeyPem: string,
+  protectedHeader: jose.JWSHeaderParameters,
   header?: jose.JWSHeaderParameters
 ): AgentCardSignatureGenerator {
   return async (agentCard: AgentCard): Promise<AgentCard> => {
     const cardCopy = JSON.parse(JSON.stringify(agentCard));
     delete cardCopy.signatures;
     const canonicalPayload = canonicalizeAgentCard(cardCopy);
-    const payloadBytes = new TextEncoder().encode(canonicalPayload);
 
-    const private_key = await jose.importPKCS8(private_key_pem, protectedHeader.alg);
-    const jws = await new jose.CompactSign(payloadBytes)
+    const privateKey = await jose.importPKCS8(privateKeyPem, protectedHeader.alg);
+    const jws = await new jose.FlattenedSign(new TextEncoder().encode(canonicalPayload))
       .setProtectedHeader(protectedHeader)
-      .sign(private_key);
+      .setUnprotectedHeader(header)
+      .sign(privateKey);
 
-    const [encodedHeader, , encodedSignature] = jws.split('.');
     const agentCardSignature: AgentCardSignature = {
-      protected: encodedHeader,
-      signature: encodedSignature,
-      header: header,
+      protected: jws.protected,
+      signature: jws.signature,
+      header: jws.header,
     };
 
     if (!agentCard.signatures) agentCard.signatures = [];
@@ -35,36 +34,40 @@ export function generate_agent_card_signature(
 
 export type AgentCardSignatureVerifier = (agentCard: AgentCard) => Promise<void>;
 
-export function verify_agent_card_signature(
-  retrieve_public_key: (kid: string, jku?: string) => Promise<string>
+export function verifyAgentCardSignature(
+  retrievePublicKey: (kid: string, jku?: string) => Promise<string>
 ): AgentCardSignatureVerifier {
   return async (agentCard: AgentCard): Promise<void> => {
+    if (!agentCard.signatures?.length) {
+      throw new Error('No signatures found on agent card to verify.');
+    }
     const cardCopy = JSON.parse(JSON.stringify(agentCard));
     delete cardCopy.signatures;
-    const canonical_payload = canonicalizeAgentCard(cardCopy);
-    const payloadBytes = new TextEncoder().encode(canonical_payload);
+    const canonicalPayload = canonicalizeAgentCard(cardCopy);
+    const payloadBytes = new TextEncoder().encode(canonicalPayload);
     const encodedPayload = jose.base64url.encode(payloadBytes);
 
-    let last_error;
     for (const signatureEntry of agentCard.signatures) {
       try {
-        const protected_header = jose.decodeProtectedHeader(signatureEntry);
-        if (!protected_header.kid || !protected_header.typ || !protected_header.alg) {
+        const protectedHeader = jose.decodeProtectedHeader(signatureEntry);
+        if (!protectedHeader.kid || !protectedHeader.typ || !protectedHeader.alg) {
           throw new Error('Missing required header parameters (kid, typ, alg)');
         }
-        const public_key_pem = await retrieve_public_key(
-          protected_header.kid,
-          protected_header.jku
-        );
-        const key = await jose.importSPKI(public_key_pem, protected_header.alg);
-        const jws = `${signatureEntry.protected}.${encodedPayload}.${signatureEntry.signature}`;
-        await jose.compactVerify(jws, key);
+        const publicKeyPem = await retrievePublicKey(protectedHeader.kid, protectedHeader.jku);
+        const key = await jose.importSPKI(publicKeyPem, protectedHeader.alg);
+        const jws: jose.FlattenedJWS = {
+          payload: encodedPayload,
+          protected: signatureEntry.protected,
+          signature: signatureEntry.signature,
+          header: signatureEntry.header,
+        };
+        await jose.flattenedVerify(jws, key);
         return;
       } catch (error) {
-        last_error = error;
+        console.warn('Signature verification failed:', error);
       }
     }
-    throw last_error;
+    throw new Error('No valid signatures found on agent card.');
   };
 }
 
