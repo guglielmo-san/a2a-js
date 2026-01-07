@@ -87,7 +87,7 @@ describe('Agent Card Signature', () => {
       const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'key-1',
-        typ: 'JWT',
+        typ: 'JOSE',
       });
 
       await signer(mockAgentCard);
@@ -109,7 +109,7 @@ describe('Agent Card Signature', () => {
       const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
-        typ: 'JWT',
+        typ: 'JOSE',
       });
       await signer(mockAgentCard);
 
@@ -123,7 +123,7 @@ describe('Agent Card Signature', () => {
       const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
-        typ: 'JWT',
+        typ: 'JOSE',
       });
       await signer(mockAgentCard);
 
@@ -136,7 +136,7 @@ describe('Agent Card Signature', () => {
       const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
-        typ: 'JWT',
+        typ: 'JOSE',
       });
       await signer(mockAgentCard);
 
@@ -155,7 +155,7 @@ describe('Agent Card Signature', () => {
       const signer = generateAgentCardSignature(privateKey, {
         alg: ALG,
         kid: 'test-key-1',
-        typ: 'JWT',
+        typ: 'JOSE',
       });
       await signer(mockAgentCard);
 
