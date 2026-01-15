@@ -1,6 +1,6 @@
 {
   "name": "@a2a-js/sdk",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Server & Client SDK for Agent2Agent protocol",
   "license": "Apache-2.0",
   "repository": {
@@ -13,6 +13,22 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "typesVersions": {
+    "*": {
+      "server": [
+        "./dist/server/index.d.ts"
+      ],
+      "server/express": [
+        "./dist/server/express/index.d.ts"
+      ],
+      "server/grpc": [
+        "./dist/server/grpc/index.d.ts"
+      ],
+      "client": [
+        "./dist/client/index.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

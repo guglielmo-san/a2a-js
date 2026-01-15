@@ -1,18 +1,17 @@
 import { describe, it, beforeEach, afterEach, assert, expect, vi, Mock } from 'vitest';
 import * as grpc from '@grpc/grpc-js';
-import * as proto from '../../../src/grpc/a2a.js';
+import * as proto from '../../../src/grpc/pb/a2a_services.js';
 import { A2AError, A2ARequestHandler } from '../../../src/server/index.js';
-import { grpcHandler } from '../../../src/server/grpc/grpc_handler.js';
+import { grpcService } from '../../../src/server/grpc/grpc_service.js';
 import { AgentCard, HTTP_EXTENSION_HEADER, MessageSendParams, Task } from '../../../src/index.js';
-import { ToProto } from '../../../src/grpc/utils/to_proto.js';
-import { FromProto } from '../../../src/grpc/utils/from_proto.js';
+import { ToProto } from '../../../src/types/converters/to_proto.js';
+import { FromProto } from '../../../src/types/converters/from_proto.js';
 
-vi.mock('../../../src/grpc/utils/from_proto.js');
-vi.mock('../../../src/grpc/utils/to_proto.js');
-
+vi.mock('../../../src/types/converters/from_proto.js');
+vi.mock('../../../src/types/converters/to_proto.js');
 describe('grpcHandler', () => {
   let mockRequestHandler: A2ARequestHandler;
-  let handler: ReturnType<typeof grpcHandler>;
+  let handler: ReturnType<typeof grpcService>;
 
   const testAgentCard: AgentCard = {
     protocolVersion: '0.3.0',
@@ -64,7 +63,7 @@ describe('grpcHandler', () => {
   beforeEach(() => {
     mockRequestHandler = {
       getAgentCard: vi.fn().mockResolvedValue(testAgentCard),
-      getAuthenticatedExtendedAgentCard: vi.fn(),
+      getAuthenticatedExtendedAgentCard: vi.fn().mockResolvedValue(testAgentCard),
       sendMessage: vi.fn().mockResolvedValue(testTask),
       sendMessageStream: vi.fn(),
       getTask: vi.fn(),
@@ -76,7 +75,7 @@ describe('grpcHandler', () => {
       resubscribe: vi.fn(),
     };
 
-    handler = grpcHandler({
+    handler = grpcService({
       requestHandler: mockRequestHandler,
       userBuilder: async () => ({ id: 'test-user' }) as any,
     });
@@ -96,7 +95,7 @@ describe('grpcHandler', () => {
 
       await handler.getAgentCard(call, callback);
 
-      expect(mockRequestHandler.getAgentCard).toHaveBeenCalled();
+      expect(mockRequestHandler.getAuthenticatedExtendedAgentCard).toHaveBeenCalled();
       expect(ToProto.agentCard).toHaveBeenCalledWith(testAgentCard);
       const [err, response] = callback.mock.calls[0];
       assert.isNull(err);
@@ -105,7 +104,7 @@ describe('grpcHandler', () => {
     });
 
     it('should return gRPC error code on failure', async () => {
-      (mockRequestHandler.getAgentCard as Mock).mockRejectedValue(
+      (mockRequestHandler.getAuthenticatedExtendedAgentCard as Mock).mockRejectedValue(
         new A2AError(-32001, 'Not Found')
       );
       const call = createMockUnaryCall({});

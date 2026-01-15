@@ -17,8 +17,7 @@ import {
   restHandler,
   UserBuilder,
 } from '../../src/server/express/index.js';
-import { grpcHandler } from '../../src/server/grpc/grpc_handler.js';
-import { A2AServiceService } from '../../src/grpc/a2a.js';
+import { grpcService, A2AService } from '../../src/server/grpc/index.js';
 
 /**
  * SUTAgentExecutor implements the agent's core logic.
@@ -234,12 +233,12 @@ async function main() {
 
   // 6. Start the gRPC server on a different port
   const GRPC_PORT = process.env.GRPC_PORT || 41242;
-  const grpcHandlerInstance = grpcHandler({
+  const grpcHandlerInstance = grpcService({
     requestHandler,
     userBuilder: UserBuilder.noAuthentication,
   });
   const server = new Server();
-  server.addService(A2AServiceService, grpcHandlerInstance);
+  server.addService(A2AService, grpcHandlerInstance);
   server.bindAsync(`localhost:${GRPC_PORT}`, ServerCredentials.createInsecure(), () => {
     console.log(`[SUTAgent] gRPC server running at http://localhost:${GRPC_PORT}`);
   });
