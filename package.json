@@ -21,6 +21,9 @@
       "server/express": [
         "./dist/server/express/index.d.ts"
       ],
+      "server/grpc": [
+        "./dist/server/grpc/index.d.ts"
+      ],
       "client": [
         "./dist/client/index.d.ts"
       ]
@@ -42,6 +45,11 @@
       "import": "./dist/server/express/index.js",
       "require": "./dist/server/express/index.cjs"
     },
+    "./server/grpc": {
+      "types": "./dist/server/grpc/index.d.ts",
+      "import": "./dist/server/grpc/index.js",
+      "require": "./dist/server/grpc/index.cjs"
+    },
     "./client": {
       "types": "./dist/client/index.d.ts",
       "import": "./dist/client/index.js",
@@ -54,8 +62,11 @@
     "README.md"
   ],
   "devDependencies": {
+    "@bufbuild/buf": "^1.61.0",
+    "@bufbuild/protobuf": "^2.10.2",
     "@cloudflare/vitest-pool-workers": "^0.10.15",
     "@eslint/js": "^9.39.1",
+    "@grpc/grpc-js": "^1.11.0",
     "@types/express": "^5.0.3",
     "@types/node": "^22.13.14",
     "@types/supertest": "^6.0.3",
@@ -91,10 +102,18 @@
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
+    "@bufbuild/protobuf": "^2.10.2",
+    "@grpc/grpc-js": "^1.11.0",
     "express": "^4.21.2 || ^5.1.0"
   },
   "peerDependenciesMeta": {
     "express": {
+      "optional": true
+    },
+    "@grpc/grpc-js": {
+      "optional": true
+    },
+    "@bufbuild/protobuf": {
       "optional": true
     }
   }

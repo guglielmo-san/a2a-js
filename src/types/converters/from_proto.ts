@@ -33,7 +33,7 @@ import {
   AgentProvider,
   AgentCapabilities,
   AgentExtension,
-} from '../pb/a2a.js';
+} from '../pb/a2a_types.js';
 import * as types from '../../types.js';
 import { extractTaskId, extractTaskAndPushNotificationConfigId } from './id_decoding.js';
 
@@ -106,7 +106,7 @@ export class FromProto {
     return {
       kind: 'message',
       messageId: message.messageId,
-      parts: message.content.map((p) => FromProto.parts(p)),
+      parts: message.content.map((p) => FromProto.part(p)),
       contextId: message.contextId,
       taskId: message.taskId,
       role: FromProto.role(message.role),
@@ -168,7 +168,7 @@ export class FromProto {
     };
   }
 
-  static parts(part: Part): types.Part {
+  static part(part: Part): types.Part {
     if (part.part?.$case === 'text') {
       return {
         kind: 'text',
@@ -274,7 +274,7 @@ export class FromProto {
       artifactId: artifact.artifactId,
       name: artifact.name,
       description: artifact.description,
-      parts: artifact.parts.map((p) => FromProto.parts(p)),
+      parts: artifact.parts.map((p) => FromProto.part(p)),
       metadata: artifact.metadata,
     };
   }
