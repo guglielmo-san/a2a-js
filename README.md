@@ -41,7 +41,7 @@ This SDK implements the A2A Protocol Specification [`v0.3.0`](https://a2a-protoc
 | :--- | :---: | :---: |
 | **JSON-RPC** | ✅ | ✅ |
 | **HTTP+JSON/REST** | ✅ | ✅ |
-| **gRPC** | ✅ | ✅ |
+| **gRPC** (Node.js only) | ✅ | ✅ |
 
 ## Quickstart
 
