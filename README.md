@@ -186,7 +186,7 @@ await run();
 
 ### GRPC Client: Sending a Message
 
-The [`ClientFactory`](src/client/factory.ts) has to be created explicitly passing the GrpcTransportFactory.
+The [`ClientFactory`](src/client/factory.ts) has to be created explicitly passing the [`GrpcTransportFactory`](src/client/transports/grpc/grpc_transport.ts).
 
 ```typescript
 // client.ts
