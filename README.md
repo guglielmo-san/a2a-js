@@ -41,7 +41,7 @@ This SDK implements the A2A Protocol Specification [`v0.3.0`](https://a2a-protoc
 | :--- | :---: | :---: |
 | **JSON-RPC** | ✅ | ✅ |
 | **HTTP+JSON/REST** | ✅ | ✅ |
-| **gRPC** | ❌ | ❌ |
+| **gRPC** | ✅ | ✅ |
 
 ## Quickstart
 
@@ -54,6 +54,7 @@ The core of an A2A server is the `AgentExecutor`, which contains your agent's lo
 ```typescript
 // server.ts
 import express from 'express';
+import { Server, ServerCredentials } from '@grpc/grpc-js';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentCard, Message, AGENT_CARD_PATH } from '@a2a-js/sdk';
 import {
@@ -64,6 +65,7 @@ import {
   InMemoryTaskStore,
 } from '@a2a-js/sdk/server';
 import { agentCardHandler, jsonRpcHandler, restHandler, UserBuilder } from '@a2a-js/sdk/server/express';
+import { grpcService, A2AService } from '@a2a-js/sdk/server/grpc';
 
 // 1. Define your agent's identity card.
 const helloAgentCard: AgentCard = {
@@ -81,6 +83,7 @@ const helloAgentCard: AgentCard = {
   additionalInterfaces: [
     { url: 'http://localhost:4000/a2a/jsonrpc', transport: 'JSONRPC' }, // Default JSON-RPC transport
     { url: 'http://localhost:4000/a2a/rest', transport: 'HTTP+JSON' }, // HTTP+JSON/REST transport
+    { url: 'localhost:4001', transport: 'GRPC' }, // gRPC transport
   ],
 };
 
@@ -123,6 +126,15 @@ app.use('/a2a/rest', restHandler({ requestHandler, userBuilder: UserBuilder.noAu
 app.listen(4000, () => {
   console.log(`🚀 Server started on http://localhost:4000`);
 });
+
+const server = new Server();
+server.addService(A2AService, grpcService({
+  requestHandler,
+  userBuilder: UserBuilder.noAuthentication,
+}));
+server.bindAsync(`localhost:4001`, ServerCredentials.createInsecure(), () => {
+  console.log(`🚀 Server started on localhost:4001`);
+});
 ```
 
 ### Client: Sending a Message
@@ -131,12 +143,17 @@ The [`ClientFactory`](src/client/factory.ts) makes it easy to communicate with a
 
 ```typescript
 // client.ts
-import { ClientFactory } from '@a2a-js/sdk/client';
+import { ClientFactory, ClientFactoryOptions } from '@a2a-js/sdk/client';
+import { GrpcTransportFactory } from '@a2a-js/sdk/client/grpc';
 import { Message, MessageSendParams, SendMessageSuccessResponse } from '@a2a-js/sdk';
 import { v4 as uuidv4 } from 'uuid';
 
 async function run() {
-  const factory = new ClientFactory();
+  const factory = new ClientFactory(
+    ClientFactoryOptions.createFrom(ClientFactoryOptions.default, {
+      transports: [new GrpcTransportFactory()]
+    })
+  );
 
   // createFromUrl accepts baseUrl and optional path,
   // (the default path is /.well-known/agent-card.json)
@@ -161,6 +178,14 @@ async function run() {
 }
 
 await run();
+```
+
+### For gRPC Usage
+
+If you plan to use the gRPC transport (imports from `@a2a-js/sdk/server/grpc` or `@a2a-js/sdk/client/grpc`), you must install the required peer dependencies:
+
+```bash
+npm install @grpc/grpc-js @bufbuild/protobuf
 ```
 
 ---

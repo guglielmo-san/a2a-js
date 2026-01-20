@@ -185,7 +185,7 @@ const SUTAgentCard: AgentCard = {
   additionalInterfaces: [
     { url: 'http://localhost:41241/a2a/jsonrpc', transport: 'JSONRPC' },
     { url: 'http://localhost:41241/a2a/rest', transport: 'HTTP+JSON' },
-    { url: 'http://localhost:41242', transport: 'GRPC' },
+    { url: 'localhost:41242', transport: 'GRPC' },
   ],
 };
 
@@ -240,7 +240,7 @@ async function main() {
   const server = new Server();
   server.addService(A2AService, grpcHandlerInstance);
   server.bindAsync(`localhost:${GRPC_PORT}`, ServerCredentials.createInsecure(), () => {
-    console.log(`[SUTAgent] gRPC server running at http://localhost:${GRPC_PORT}`);
+    console.log(`[SUTAgent] gRPC server running at localhost:${GRPC_PORT}`);
   });
 }
 
