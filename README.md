@@ -152,6 +152,8 @@ async function run() {
   const factory = new ClientFactory(
     ClientFactoryOptions.createFrom(ClientFactoryOptions.default, {
       transports: [new GrpcTransportFactory()]
+      // add the preferredTransport option to override the agent card's default transport
+      // preferredTransports: ['grpc'],
     })
   );
 
