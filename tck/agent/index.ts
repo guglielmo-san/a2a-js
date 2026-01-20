@@ -185,7 +185,7 @@ const SUTAgentCard: AgentCard = {
   additionalInterfaces: [
     { url: 'http://localhost:41241/a2a/jsonrpc', transport: 'JSONRPC' },
     { url: 'http://localhost:41241/a2a/rest', transport: 'HTTP+JSON' },
-    { url: 'localhost:41242', transport: 'GRPC' },
+    { url: 'http://localhost:41242', transport: 'GRPC' },
   ],
 };
 
