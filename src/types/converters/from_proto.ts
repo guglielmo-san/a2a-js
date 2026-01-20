@@ -150,7 +150,7 @@ export class FromProto {
     return {
       id: config.id,
       url: config.url,
-      token: config.token,
+      token: config.token || undefined,
       authentication: FromProto.pushNotificationAuthenticationInfo(config.authentication),
     };
   }
@@ -240,7 +240,7 @@ export class FromProto {
     return {
       message: FromProto.message(status.update),
       state: FromProto.taskState(status.state),
-      timestamp: status.timestamp?.toISOString(),
+      timestamp: status.timestamp,
     };
   }
 
@@ -272,8 +272,8 @@ export class FromProto {
   static artifact(artifact: Artifact): types.Artifact {
     return {
       artifactId: artifact.artifactId,
-      name: artifact.name,
-      description: artifact.description,
+      name: artifact.name || undefined,
+      description: artifact.description || undefined,
       parts: artifact.parts.map((p) => FromProto.part(p)),
       metadata: artifact.metadata,
     };
@@ -303,7 +303,7 @@ export class FromProto {
       defaultInputModes: agentCard.defaultInputModes,
       defaultOutputModes: agentCard.defaultOutputModes,
       description: agentCard.description,
-      documentationUrl: agentCard.documentationUrl,
+      documentationUrl: agentCard.documentationUrl || undefined,
       name: agentCard.name,
       preferredTransport: agentCard.preferredTransport,
       provider: agentCard.provider ? FromProto.agentProvider(agentCard.provider) : undefined,
@@ -335,8 +335,8 @@ export class FromProto {
 
   static agentExtension(extension: AgentExtension): types.AgentExtension {
     return {
-      uri: extension.uri ?? '',
-      description: extension.description,
+      uri: extension.uri,
+      description: extension.description || undefined,
       required: extension.required,
       params: extension.params,
     };
@@ -344,15 +344,15 @@ export class FromProto {
 
   static agentInterface(intf: AgentInterface): types.AgentInterface {
     return {
-      transport: intf.transport ?? '',
-      url: intf.url ?? '',
+      transport: intf.transport,
+      url: intf.url,
     };
   }
 
   static agentProvider(provider: AgentProvider): types.AgentProvider {
     return {
-      organization: provider.organization ?? '',
-      url: provider.url ?? '',
+      organization: provider.organization,
+      url: provider.url,
     };
   }
 
@@ -369,31 +369,31 @@ export class FromProto {
           type: 'apiKey',
           name: securitySchemes.scheme.value.name,
           in: securitySchemes.scheme.value.location as 'query' | 'header' | 'cookie',
-          description: securitySchemes.scheme.value.description,
+          description: securitySchemes.scheme.value.description || undefined,
         };
       case 'httpAuthSecurityScheme':
         return {
           type: 'http',
           scheme: securitySchemes.scheme.value.scheme,
-          bearerFormat: securitySchemes.scheme.value.bearerFormat,
-          description: securitySchemes.scheme.value.description,
+          bearerFormat: securitySchemes.scheme.value.bearerFormat || undefined,
+          description: securitySchemes.scheme.value.description || undefined,
         };
       case 'mtlsSecurityScheme':
         return {
           type: 'mutualTLS',
-          description: securitySchemes.scheme.value.description,
+          description: securitySchemes.scheme.value.description || undefined,
         };
       case 'oauth2SecurityScheme':
         return {
           type: 'oauth2',
-          description: securitySchemes.scheme.value.description,
+          description: securitySchemes.scheme.value.description || undefined,
           flows: FromProto.oauthFlows(securitySchemes.scheme.value.flows),
-          oauth2MetadataUrl: securitySchemes.scheme.value.oauth2MetadataUrl,
+          oauth2MetadataUrl: securitySchemes.scheme.value.oauth2MetadataUrl || undefined,
         };
       case 'openIdConnectSecurityScheme':
         return {
           type: 'openIdConnect',
-          description: securitySchemes.scheme.value.description,
+          description: securitySchemes.scheme.value.description || undefined,
           openIdConnectUrl: securitySchemes.scheme.value.openIdConnectUrl,
         };
       default:
@@ -408,13 +408,13 @@ export class FromProto {
           implicit: {
             authorizationUrl: flows.flow.value.authorizationUrl,
             scopes: flows.flow.value.scopes,
-            refreshUrl: flows.flow.value.refreshUrl,
+            refreshUrl: flows.flow.value.refreshUrl || undefined,
           },
         };
       case 'password':
         return {
           password: {
-            refreshUrl: flows.flow.value.refreshUrl,
+            refreshUrl: flows.flow.value.refreshUrl || undefined,
             scopes: flows.flow.value.scopes,
             tokenUrl: flows.flow.value.tokenUrl,
           },
@@ -422,7 +422,7 @@ export class FromProto {
       case 'authorizationCode':
         return {
           authorizationCode: {
-            refreshUrl: flows.flow.value.refreshUrl,
+            refreshUrl: flows.flow.value.refreshUrl || undefined,
             authorizationUrl: flows.flow.value.authorizationUrl,
             scopes: flows.flow.value.scopes,
             tokenUrl: flows.flow.value.tokenUrl,
@@ -431,7 +431,7 @@ export class FromProto {
       case 'clientCredentials':
         return {
           clientCredentials: {
-            refreshUrl: flows.flow.value.refreshUrl,
+            refreshUrl: flows.flow.value.refreshUrl || undefined,
             scopes: flows.flow.value.scopes,
             tokenUrl: flows.flow.value.tokenUrl,
           },

@@ -47,12 +47,12 @@ export class ToProto {
       name: agentCard.name,
       description: agentCard.description,
       url: agentCard.url,
-      preferredTransport: agentCard.preferredTransport,
+      preferredTransport: agentCard.preferredTransport ?? '',
       additionalInterfaces:
         agentCard.additionalInterfaces?.map((i) => ToProto.agentInterface(i)) ?? [],
       provider: ToProto.agentProvider(agentCard.provider),
       version: agentCard.version,
-      documentationUrl: agentCard.documentationUrl,
+      documentationUrl: agentCard.documentationUrl ?? '',
       capabilities: ToProto.agentCapabilities(agentCard.capabilities),
       securitySchemes: agentCard.securitySchemes
         ? Object.fromEntries(
@@ -111,7 +111,7 @@ export class ToProto {
             value: {
               name: scheme.name,
               location: scheme.in,
-              description: scheme.description,
+              description: scheme.description ?? '',
             },
           },
         };
@@ -120,9 +120,9 @@ export class ToProto {
           scheme: {
             $case: 'httpAuthSecurityScheme',
             value: {
-              description: scheme.description,
+              description: scheme.description ?? '',
               scheme: scheme.scheme,
-              bearerFormat: scheme.bearerFormat,
+              bearerFormat: scheme.bearerFormat ?? '',
             },
           },
         };
@@ -131,7 +131,7 @@ export class ToProto {
           scheme: {
             $case: 'mtlsSecurityScheme',
             value: {
-              description: scheme.description,
+              description: scheme.description ?? '',
             },
           },
         };
@@ -140,9 +140,9 @@ export class ToProto {
           scheme: {
             $case: 'oauth2SecurityScheme',
             value: {
-              description: scheme.description,
+              description: scheme.description ?? '',
               flows: ToProto.oauthFlows(scheme.flows),
-              oauth2MetadataUrl: scheme.oauth2MetadataUrl,
+              oauth2MetadataUrl: scheme.oauth2MetadataUrl ?? '',
             },
           },
         };
@@ -151,7 +151,7 @@ export class ToProto {
           scheme: {
             $case: 'openIdConnectSecurityScheme',
             value: {
-              description: scheme.description,
+              description: scheme.description ?? '',
               openIdConnectUrl: scheme.openIdConnectUrl,
             },
           },
@@ -169,7 +169,7 @@ export class ToProto {
           value: {
             authorizationUrl: flows.implicit.authorizationUrl,
             scopes: flows.implicit.scopes,
-            refreshUrl: flows.implicit.refreshUrl,
+            refreshUrl: flows.implicit.refreshUrl ?? '',
           },
         },
       };
@@ -180,7 +180,7 @@ export class ToProto {
           value: {
             tokenUrl: flows.password.tokenUrl,
             scopes: flows.password.scopes,
-            refreshUrl: flows.password.refreshUrl,
+            refreshUrl: flows.password.refreshUrl ?? '',
           },
         },
       };
@@ -191,7 +191,7 @@ export class ToProto {
           value: {
             tokenUrl: flows.clientCredentials.tokenUrl,
             scopes: flows.clientCredentials.scopes,
-            refreshUrl: flows.clientCredentials.refreshUrl,
+            refreshUrl: flows.clientCredentials.refreshUrl ?? '',
           },
         },
       };
@@ -203,7 +203,7 @@ export class ToProto {
             authorizationUrl: flows.authorizationCode.authorizationUrl,
             tokenUrl: flows.authorizationCode.tokenUrl,
             scopes: flows.authorizationCode.scopes,
-            refreshUrl: flows.authorizationCode.refreshUrl,
+            refreshUrl: flows.authorizationCode.refreshUrl ?? '',
           },
         },
       };
@@ -242,8 +242,8 @@ export class ToProto {
   static agentExtension(extension: types.AgentExtension): AgentExtension {
     return {
       uri: extension.uri,
-      description: extension.description,
-      required: extension.required,
+      description: extension.description ?? '',
+      required: extension.required ?? false,
       params: extension.params,
     };
   }
@@ -311,9 +311,9 @@ export class ToProto {
     }
 
     return {
-      id: config.id,
+      id: config.id ?? '',
       url: config.url,
-      token: config.token,
+      token: config.token ?? '',
       authentication: ToProto.pushNotificationAuthenticationInfo(config.authentication),
     };
   }
@@ -326,7 +326,7 @@ export class ToProto {
     }
     return {
       schemes: authInfo.schemes,
-      credentials: authInfo.credentials,
+      credentials: authInfo.credentials ?? '',
     };
   }
 
@@ -413,8 +413,8 @@ export class ToProto {
     return {
       messageId: message.messageId,
       content: message.parts.map((p) => ToProto.part(p)),
-      contextId: message.contextId,
-      taskId: message.taskId,
+      contextId: message.contextId ?? '',
+      taskId: message.taskId ?? '',
       role: ToProto.role(message.role),
       metadata: message.metadata,
       extensions: message.extensions ?? [],
@@ -447,15 +447,15 @@ export class ToProto {
     return {
       state: ToProto.taskState(status.state),
       update: ToProto.message(status.message),
-      timestamp: status.timestamp ? new Date(status.timestamp) : undefined,
+      timestamp: status.timestamp,
     };
   }
 
   static artifact(artifact: types.Artifact): Artifact {
     return {
       artifactId: artifact.artifactId,
-      name: artifact.name,
-      description: artifact.description,
+      name: artifact.name ?? '',
+      description: artifact.description ?? '',
       parts: artifact.parts.map((p) => ToProto.part(p)),
       metadata: artifact.metadata,
       extensions: artifact.extensions ? artifact.extensions : [],
