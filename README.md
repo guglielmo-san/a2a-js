@@ -29,7 +29,7 @@ If you plan to use the Express integration (imports from `@a2a-js/sdk/server/exp
 npm install express
 ```
 
-### For GRPC Usage
+### For gRPC Usage
 
 If you plan to use the GRPC transport (imports from `@a2a-js/sdk/server/grpc` or `@a2a-js/sdk/client/grpc`), you must install the required peer dependencies:
 
@@ -151,8 +151,7 @@ The [`ClientFactory`](src/client/factory.ts) makes it easy to communicate with a
 
 ```typescript
 // client.ts
-import { ClientFactory, ClientFactoryOptions } from '@a2a-js/sdk/client';
-import { GrpcTransportFactory } from '@a2a-js/sdk/client/grpc';
+import { ClientFactory } from '@a2a-js/sdk/client';
 import { Message, MessageSendParams, SendMessageSuccessResponse } from '@a2a-js/sdk';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -184,7 +183,7 @@ async function run() {
 await run();
 ```
 
-### GRPC Client: Sending a Message
+### gRPC Client: Sending a Message
 
 The [`ClientFactory`](src/client/factory.ts) has to be created explicitly passing the [`GrpcTransportFactory`](src/client/transports/grpc/grpc_transport.ts).
 
@@ -197,8 +196,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 async function run() {
   const factory = new ClientFactory({
-      transports: [new GrpcTransportFactory()]
-    });
+    transports: [new GrpcTransportFactory()]
+  });
 
   // createFromUrl accepts baseUrl and optional path,
   // (the default path is /.well-known/agent-card.json)
